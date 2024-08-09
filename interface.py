@@ -28,6 +28,79 @@ class Aplicacao:
             self.tema = "dark"
         self.tela.tk.call("set_theme", self.tema)
 
+    def tela_SV_iniciar(self):
+        self.frame_SV = tk.Frame(self.tela)
+        self.frame_SV.pack()
+
+        self.lbl_texto_ip_sn = tk.Label(self.frame_SV, text="IP do Servidor de Nomes:")
+        self.lbl_texto_ip_sn.pack(pady=5)
+
+        self.entrada_IP_SN = ttk.Entry(self.frame_SV)
+        self.entrada_IP_SN.pack(pady=5)
+
+        self.lbl_texto_cadastro = tk.Label(
+            self.frame_SV, text="Nome para cadastrar Servidor"
+        )
+        self.lbl_texto_cadastro.pack(pady=5)
+
+        self.entrada_nome_sv = ttk.Entry(self.frame_SV)
+        self.entrada_nome_sv.pack(pady=5)
+
+        self.lbl_texto_ip_sv = tk.Label(self.frame_SV, text="IP do Servidor")
+        self.lbl_texto_ip_sv.pack(pady=5)
+
+        self.entrada_ip_sv = ttk.Entry(self.frame_SV)
+        self.entrada_ip_sv.pack(pady=5)
+
+        self.botao_iniciar = ttk.Button(
+            self.frame_SV,
+            text="Iniciar Servidor",
+            style="Accent.TButton",
+            command=self.tela_SV_iniciado,
+        )
+        self.botao_iniciar.pack(pady=10)
+
+    def tela_SV_iniciado(self):
+        self.erro = False
+        # try:
+        #     Pyro4.locateNS(host=self.entrada_IP_SN.get(), port=9090)
+        # except Exception as e:
+        #     self.erro = True
+        #     messagebox.showerror("Erro", "Erro em localizar o servidor de nomes")
+        if not self.erro:
+            self.frame_SV.destroy()
+
+            self.frame_SV_iniciado = tk.Frame()
+            self.frame_SV_iniciado.pack()
+
+            self.lbl_texto = tk.Label(
+                self.frame_SV_iniciado, text="Servidor de mensagens iniciado"
+            )
+            self.lbl_texto.pack(pady=10)
+
+            self.lbl_ip_sv = tk.Label(
+                self.frame_SV_iniciado, text=f"IP: {self.entrada_ip_sv.get()}"
+            )
+            self.lbl_ip_sv.pack(pady=10)
+
+    def tela_SN_iniciar(self):
+        self.frame_SN = tk.Frame(self.tela)
+        self.frame_SN.pack()
+
+        self.lbl_texto = tk.Label(self.frame_SN, text="IP do Servidor de Nomes:")
+        self.lbl_texto.pack(pady=5)
+
+        self.entrada_IP_SN = ttk.Entry(self.frame_SN)
+        self.entrada_IP_SN.pack(pady=5)
+
+        self.botao_iniciar = ttk.Button(
+            self.frame_SN,
+            text="Iniciar",
+            style="Accent.TButton",
+            command=self.tela_SN_iniciado,
+        )
+        self.botao_iniciar.pack(pady=5)
+
     def tela_SN_iniciado(self):
         SN = ServidorNomes()
         SN.iniciar_servidor_nomes(self.entrada_IP_SN.get())
@@ -48,32 +121,7 @@ class Aplicacao:
         self.tela.geometry("1200x500")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
-
-        self.frame_SN = tk.Frame(self.tela)
-        self.frame_SN.pack()
-
-        self.lbl_texto = tk.Label(self.frame_SN, text="IP do Servidor de Nomes:")
-        self.lbl_texto.pack(pady=5)
-
-        self.entrada_IP_SN = ttk.Entry(self.frame_SN)
-        self.entrada_IP_SN.pack(pady=5)
-
-        self.botao_iniciar = ttk.Button(
-            self.frame_SN,
-            text="Iniciar",
-            style="Accent.TButton",
-            command=self.tela_SN_iniciado,
-        )
-        self.botao_iniciar.pack(pady=5)
-
-        self.botao_iniciar = ttk.Button(
-            self.frame_SN,
-            text="Limpar Tela",
-            style="Accent.TButton",
-            command=self.frame_SN.destroy,
-        )
-        self.botao_iniciar.pack(pady=5)
-
+        self.tela_SV_iniciar()
         self.tela.mainloop()
 
 

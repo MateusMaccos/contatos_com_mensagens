@@ -4,6 +4,7 @@ from tkinter import messagebox
 import Pyro4
 import Pyro4.naming
 import threading
+import server
 
 
 class ServidorNomes:
@@ -29,6 +30,8 @@ class Aplicacao:
         self.tela.tk.call("set_theme", self.tema)
 
     def tela_SV_iniciar(self):
+        self.tela_inicial_frame.destroy()
+
         self.frame_SV = tk.Frame(self.tela)
         self.frame_SV.pack()
 
@@ -60,15 +63,27 @@ class Aplicacao:
         )
         self.botao_iniciar.pack(pady=10)
 
+    def iniciar_servidor(self):
+        t_sv = threading.Thread(
+            target=server.iniciar,
+            args=(self.entrada_nome_sv, self.entrada_IP_SN, self.entrada_ip_sv),
+            daemon=True,
+        )
+        t_sv.start()
+
     def tela_SV_iniciado(self):
         self.erro = False
-        # try:
-        #     Pyro4.locateNS(host=self.entrada_IP_SN.get(), port=9090)
-        # except Exception as e:
-        #     self.erro = True
-        #     messagebox.showerror("Erro", "Erro em localizar o servidor de nomes")
+        try:
+            Pyro4.locateNS(host=self.entrada_IP_SN.get(), port=9090)
+        except Exception as e:
+            self.erro = True
+            messagebox.showerror("Erro", "Erro em localizar o servidor de nomes")
         if not self.erro:
+            # self.iniciar_servidor()
             self.frame_SV.destroy()
+
+            IP_SV = self.entrada_ip_sv.get()
+            NOME_SV = self.entrada_ip_sv.get()
 
             self.frame_SV_iniciado = tk.Frame()
             self.frame_SV_iniciado.pack()
@@ -78,12 +93,15 @@ class Aplicacao:
             )
             self.lbl_texto.pack(pady=10)
 
-            self.lbl_ip_sv = tk.Label(
-                self.frame_SV_iniciado, text=f"IP: {self.entrada_ip_sv.get()}"
-            )
+            self.lbl_ip_sv = tk.Label(self.frame_SV_iniciado, text=f"IP: {IP_SV}")
             self.lbl_ip_sv.pack(pady=10)
 
+            self.lbl_nome_sv = tk.Label(self.frame_SV_iniciado, text=f"Nome: {NOME_SV}")
+            self.lbl_nome_sv.pack(pady=10)
+
     def tela_SN_iniciar(self):
+        self.tela_inicial_frame.destroy()
+
         self.frame_SN = tk.Frame(self.tela)
         self.frame_SN.pack()
 
@@ -115,13 +133,74 @@ class Aplicacao:
         )
         self.lbl_texto.pack(pady=10)
 
+    def tela_agenda(self):
+        self.frame_agenda = tk.Frame()
+        self.frame_agenda.pack()
+
+        self.lbl_texto_sv = tk.Label(self.frame_agenda, text="Nome do Servidor")
+        self.lbl_texto_sv.pack(pady=5)
+
+        self.entrada_nome_sv = ttk.Entry(self.frame_agenda)
+        self.entrada_nome_sv.pack(pady=5)
+
+        self.lbl_texto_ip_sn = tk.Label(
+            self.frame_agenda, text="IP do Servidor de Nomes"
+        )
+        self.lbl_texto_ip_sn.pack(pady=5)
+
+        self.entrada_ip_sn = ttk.Entry(self.frame_agenda)
+        self.entrada_ip_sn.pack(pady=5)
+
+        self.botao_iniciar = ttk.Button(
+            self.frame_agenda,
+            text="Iniciar Agenda",
+            style="Accent.TButton",
+            command=self.tela_agenda_iniciado,
+        )
+        self.botao_iniciar.pack(pady=10)
+
+    def tela_agenda_iniciado(self):
+        self.frame_agenda.destroy()
+        self.sv_mensagens = Pyro4.Proxy(
+            "PYRONAME:" + self.entrada_nome_sv + "@" + self.entrada_ip_sn + ":9090"
+        )
+        self.sv_mensagens.testarSM()
+
+    def tela_inicial(self):
+        self.tela_inicial_frame = tk.Frame(self.tela)
+        self.tela_inicial_frame.pack()
+
+        self.botao_SN = ttk.Button(
+            self.tela_inicial_frame,
+            text="Servidor de Nomes",
+            style="Accent.TButton",
+            command=self.tela_SN_iniciar,
+        )
+        self.botao_SN.pack(pady=10)
+
+        self.botao_SV = ttk.Button(
+            self.tela_inicial_frame,
+            text="Servidor de Mensagens",
+            style="Accent.TButton",
+            command=self.tela_SV_iniciar,
+        )
+        self.botao_SV.pack(pady=10)
+
+        self.botao_agenda = ttk.Button(
+            self.tela_inicial_frame,
+            text="Agenda de Contatos",
+            style="Accent.TButton",
+            command=self.tela_agenda,
+        )
+        self.botao_agenda.pack(pady=10)
+
     def run(self):
         self.tela = tk.Tk()
         self.tela.title("Agenda")
         self.tela.geometry("1200x500")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
-        self.tela_SV_iniciar()
+        self.tela_inicial()
         self.tela.mainloop()
 
 

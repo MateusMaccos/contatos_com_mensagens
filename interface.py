@@ -63,27 +63,28 @@ class Aplicacao:
         )
         self.botao_iniciar.pack(pady=10)
 
-    def iniciar_servidor(self):
+    def iniciar_servidor(self, nome_sv, ip_sn, ip_sv):
         t_sv = threading.Thread(
             target=server.iniciar,
-            args=(self.entrada_nome_sv, self.entrada_IP_SN, self.entrada_ip_sv),
+            args=(nome_sv, ip_sn, ip_sv),
             daemon=True,
         )
         t_sv.start()
 
     def tela_SV_iniciado(self):
         self.erro = False
+        ip_sn = self.entrada_IP_SN.get()
+        ip_sv = self.entrada_ip_sv.get()
+        nome_sv = self.entrada_nome_sv.get()
         try:
-            Pyro4.locateNS(host=self.entrada_IP_SN.get(), port=9090)
+            Pyro4.locateNS(host=ip_sn, port=9090)
         except Exception as e:
             self.erro = True
             messagebox.showerror("Erro", "Erro em localizar o servidor de nomes")
         if not self.erro:
-            # self.iniciar_servidor()
-            self.frame_SV.destroy()
 
-            IP_SV = self.entrada_ip_sv.get()
-            NOME_SV = self.entrada_ip_sv.get()
+            self.iniciar_servidor(nome_sv, ip_sn, ip_sv)
+            self.frame_SV.destroy()
 
             self.frame_SV_iniciado = tk.Frame()
             self.frame_SV_iniciado.pack()
@@ -93,10 +94,10 @@ class Aplicacao:
             )
             self.lbl_texto.pack(pady=10)
 
-            self.lbl_ip_sv = tk.Label(self.frame_SV_iniciado, text=f"IP: {IP_SV}")
+            self.lbl_ip_sv = tk.Label(self.frame_SV_iniciado, text=f"IP: {ip_sv}")
             self.lbl_ip_sv.pack(pady=10)
 
-            self.lbl_nome_sv = tk.Label(self.frame_SV_iniciado, text=f"Nome: {NOME_SV}")
+            self.lbl_nome_sv = tk.Label(self.frame_SV_iniciado, text=f"Nome: {nome_sv}")
             self.lbl_nome_sv.pack(pady=10)
 
     def tela_SN_iniciar(self):
@@ -160,10 +161,12 @@ class Aplicacao:
         self.botao_iniciar.pack(pady=10)
 
     def tela_agenda_iniciado(self):
+        nome_sv = self.entrada_nome_sv.get()
+        ip_sn = self.entrada_ip_sn.get()
+
         self.frame_agenda.destroy()
-        self.sv_mensagens = Pyro4.Proxy(
-            "PYRONAME:" + self.entrada_nome_sv + "@" + self.entrada_ip_sn + ":9090"
-        )
+
+        self.sv_mensagens = Pyro4.Proxy("PYRONAME:" + nome_sv + "@" + ip_sn + ":9090")
         self.sv_mensagens.testarSM()
 
     def tela_inicial(self):

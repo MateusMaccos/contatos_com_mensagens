@@ -174,65 +174,67 @@ class Aplicacao:
         self.usuario = Usuario(nome_usuario)
 
         self.frame_agenda.destroy()
+        try:
+            self.sv_mensagens = Pyro4.Proxy("PYRONAME:" + nome_sv + "@" + ip_sn + ":9090")
+            self.sv_mensagens.addUsuario(nome_usuario)
 
-        self.sv_mensagens = Pyro4.Proxy("PYRONAME:" + nome_sv + "@" + ip_sn + ":9090")
+            self.frame_agenda_iniciada = tk.Frame()
+            self.frame_agenda_iniciada.pack()
 
-        self.sv_mensagens.addUsuario(nome_usuario)
+            self.cabecalho = tk.Frame(self.frame_agenda_iniciada)
+            self.cabecalho.pack()
 
-        self.frame_agenda_iniciada = tk.Frame()
-        self.frame_agenda_iniciada.pack()
+            self.botao_adicionar = ttk.Button(
+                self.cabecalho,
+                text="Adicionar contato",
+                style="Accent.TButton",
+                command=self.telaAdicionarContato,
+            )
+            self.botao_adicionar.pack(pady=10, side=tk.LEFT)
 
-        self.cabecalho = tk.Frame(self.frame_agenda_iniciada)
-        self.cabecalho.pack()
+            self.frame_status = tk.Frame(self.cabecalho)
+            self.frame_status.pack(side=tk.RIGHT)
 
-        self.botao_adicionar = ttk.Button(
-            self.cabecalho,
-            text="Adicionar contato",
-            style="Accent.TButton",
-            command=self.telaAdicionarContato,
-        )
-        self.botao_adicionar.pack(pady=10, side=tk.LEFT)
+            self.statusSwitch = tk.BooleanVar()
+            self.statusSwitch.set(self.usuario.getStatus() == "online")
+            self.switch = ttk.Checkbutton(
+                self.frame_status,
+                text=self.usuario.getStatus(),
+                style="Switch.TCheckbutton",
+                command=self.atualizarStatus,
+                variable=self.statusSwitch,
+            )
+            self.switch.pack()
 
-        self.frame_status = tk.Frame(self.cabecalho)
-        self.frame_status.pack(side=tk.RIGHT)
+            self.lbl_texto = tk.Label(self.cabecalho, text="Contatos")
+            self.lbl_texto.pack(pady=10, padx=50, side=tk.RIGHT)
 
-        self.statusSwitch = tk.BooleanVar()
-        self.statusSwitch.set(self.usuario.getStatus() == "online")
-        self.switch = ttk.Checkbutton(
-            self.frame_status,
-            text=self.usuario.getStatus(),
-            style="Switch.TCheckbutton",
-            command=self.atualizarStatus,
-            variable=self.statusSwitch,
-        )
-        self.switch.pack()
+            self.frame_contatos = tk.Frame()
+            self.frame_contatos.pack()
 
-        self.lbl_texto = tk.Label(self.cabecalho, text="Contatos")
-        self.lbl_texto.pack(pady=10, padx=50, side=tk.RIGHT)
+            frame_caixa_usuarios = tk.Frame(self.frame_contatos)
+            frame_caixa_usuarios.pack(fill=tk.BOTH, expand=True)
 
-        self.frame_contatos = tk.Frame()
-        self.frame_contatos.pack()
+            self.lb_usuarios = tk.Listbox(frame_caixa_usuarios, width=50, height=10)
+            self.lb_usuarios.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        frame_caixa_usuarios = tk.Frame(self.frame_contatos)
-        frame_caixa_usuarios.pack(fill=tk.BOTH, expand=True)
+            # Adiciona a barra de rolagem se necessário
+            scrollbar = tk.Scrollbar(
+                frame_caixa_usuarios, orient=tk.VERTICAL, command=self.lb_usuarios.yview
+            )
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            self.lb_usuarios.config(yscrollcommand=scrollbar.set)
 
-        self.lb_usuarios = tk.Listbox(frame_caixa_usuarios, width=50, height=10)
-        self.lb_usuarios.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # Adiciona a barra de rolagem se necessário
-        scrollbar = tk.Scrollbar(
-            frame_caixa_usuarios, orient=tk.VERTICAL, command=self.lb_usuarios.yview
-        )
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.lb_usuarios.config(yscrollcommand=scrollbar.set)
-
-        self.botao_adicionar = ttk.Button(
-            self.frame_contatos,
-            text="Enviar Mensagem",
-            style="Accent.TButton",
-            command=self.telaMensagens,
-        )
-        self.botao_adicionar.pack(pady=10, side=tk.LEFT)
+            self.botao_adicionar = ttk.Button(
+                self.frame_contatos,
+                text="Enviar Mensagem",
+                style="Accent.TButton",
+                command=self.telaMensagens,
+            )
+            self.botao_adicionar.pack(pady=10, side=tk.LEFT)
+        except:
+            messagebox.showerror("Erro","Não foi possível conectar ao servidor")
+        
 
     def atualizarStatus(self):
         self.switch.destroy()
@@ -248,13 +250,59 @@ class Aplicacao:
         self.switch.pack()
 
     def telaMensagens(self):
-        nomeContato = self.usuario.getContatos()[self.lb_usuarios.curselection()[0]]
-        self.tela_cadastro = tk.Tk()
-        self.tela_cadastro.title(f"Mensagens de {nomeContato}")
-        self.tela_cadastro.geometry("500x500")
-        self.tela_cadastro.tk.call("source", "azure.tcl")
-        self.tela_cadastro.tk.call("set_theme", "dark")
+        try:
+            selecao = self.lb_usuarios.curselection()[0]
+            nomeContato = self.usuario.getContatos()[selecao]
+            self.tela_mensagens = tk.Tk()
+            self.tela_mensagens.title(f"Mensagens de {nomeContato}")
+            self.tela_mensagens.geometry("500x500")
+            self.tela_mensagens.tk.call("source", "azure.tcl")
+            self.tela_mensagens.tk.call("set_theme", "dark")
 
+            self.frame_scrolavel = tk.Frame(self.tela_mensagens)
+            self.frame_scrolavel.pack()
+
+            # Cria um Canvas
+            self.canvas = tk.Canvas(self.frame_scrolavel)
+            self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            # Adiciona barras de rolagem
+            self.scrollbar_vertical = tk.Scrollbar(
+                self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
+            )
+            self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Configuração do Canvas
+            self.canvas.configure(
+                yscrollcommand=self.scrollbar_vertical.set,
+            )
+            self.canvas.bind("<Configure>", self.on_canvas_configure_client)
+
+            # Adiciona um frame para o conteúdo
+            self.frame_mensagens = tk.Frame(self.canvas)
+            self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
+
+            self.frame_input = tk.Frame(self.tela_mensagens)
+            self.frame_input.pack(side=tk.BOTTOM,pady=5)
+
+            self.input_mensagem = ttk.Entry(self.frame_input)
+            self.input_mensagem.pack(padx=10,side=tk.LEFT)
+
+            self.btn_addMsg = ttk.Button(
+                self.frame_input,
+                text="Enviar",
+                style="Accent.TButton",
+                command=self.novaMensagem,
+            )
+            self.btn_addMsg.pack(side=tk.RIGHT)
+        except Exception as e:
+            messagebox.showwarning("Atenção",e)
+
+    def on_canvas_configure_client(self, event):
+                self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    def novaMensagem(self):
+        self.msg = ttk.Label(self.frame_mensagens,text='Olá, tudo bem?')
+        self.msg.pack()
     def tela_inicial(self):
         self.tela_inicial_frame = tk.Frame(self.tela)
         self.tela_inicial_frame.pack()
@@ -286,7 +334,7 @@ class Aplicacao:
     def telaAdicionarContato(self):
         self.tela_cadastro = tk.Tk()
         self.tela_cadastro.title("Cadastrar")
-        self.tela_cadastro.geometry("500x500")
+        self.tela_cadastro.geometry("500x100")
         self.tela_cadastro.tk.call("source", "azure.tcl")
         self.tela_cadastro.tk.call("set_theme", "dark")
 

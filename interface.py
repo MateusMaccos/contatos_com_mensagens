@@ -282,6 +282,11 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
+            for mensagem in self.usuario.getMensagens():
+                nomeUsuarioAtual = self.usuario.getNome()
+                if mensagem.origem == nomeUsuarioAtual or mensagem.destino==nomeUsuarioAtual:
+                    self.printarMsgExterna(mensagem.texto)
+
             self.frame_input = tk.Frame(self.tela_mensagens)
             self.frame_input.pack(side=tk.BOTTOM,pady=5)
 
@@ -292,17 +297,20 @@ class Aplicacao:
                 self.frame_input,
                 text="Enviar",
                 style="Accent.TButton",
-                command=self.novaMensagem,
+                command=self.enviarMensagem,
             )
             self.btn_addMsg.pack(side=tk.RIGHT)
         except Exception as e:
             messagebox.showwarning("Atenção",e)
 
     def on_canvas_configure_client(self, event):
-                self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-    def novaMensagem(self):
-        self.msg = ttk.Label(self.frame_mensagens,text='Olá, tudo bem?')
-        self.msg.pack()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    def enviarMensagem(self):
+        self.msg_encaminhada = ttk.Label(self.frame_mensagens,text=self.input_mensagem.get())
+        self.msg_encaminhada.pack()
+    def printarMsgExterna(self,conteudo):
+        self.msg_externa = ttk.Label(self.frame_mensagens,text=conteudo)
+        self.msg_externa.pack()
     def tela_inicial(self):
         self.tela_inicial_frame = tk.Frame(self.tela)
         self.tela_inicial_frame.pack()

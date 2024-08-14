@@ -28,7 +28,10 @@ class Usuario:
 
         self.nome = nome
         self.contatos = []
-        self.mensagens = []
+        self.mensagens = [
+            Mensagem('jose','mateus','OLÁ MEU BOM'),
+            Mensagem('jose','mateus','OLÁ MEU BOM, COMO VAI?'),
+        ]
         self.status = "online"
 
     def getNome(self):
@@ -39,6 +42,9 @@ class Usuario:
 
     def getContatos(self):
         return self.contatos
+    
+    def getMensagens(self):
+        return self.mensagens
 
     def enviarMensagem(self, origem, destino, texto):
         msg = Mensagem(origem, destino, texto)

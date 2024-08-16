@@ -14,21 +14,23 @@ class ServidorDeMensagens(object):
         self.server.connect(host="test.mosquitto.org", port=1883)
         self.server.loop_start()
         self.usuarios = []
-        self.mensagens = []
 
     def aoReceberMensagem(self, client, userdata, message):
         mensagemNaoTratada = message.payload.decode()
         contatoDestino = str(mensagemNaoTratada).split("/")[0]
         mensagemTratada = str(mensagemNaoTratada).split("/")[1]
         for usuario in self.usuarios:
-            if usuario.getNome() == contatoDestino and usuario.estaOnline():
-                usuarioOrigem = message.topic
-                self.mensagens.append(
-                    Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
-                )
+            if usuario.getNome() == contatoDestino:
+                if not usuario.estaOnline():
+                    usuarioOrigem = message.topic
+                    usuario.mensagens.append(
+                        Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
+                    )
 
-    def getMensagensArmazenadas(self):
-        return self.mensagens
+    def getMensagensDoUsuario(self, usuarioBuscado):
+        for usuario in self.usuarios:
+            if usuario.getNome() == usuarioBuscado:
+                return usuario.getMensagens()
 
     def addUsuario(self, user):
         usuarioNovo = Usuario(user)

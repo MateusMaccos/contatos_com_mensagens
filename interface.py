@@ -134,6 +134,14 @@ class Aplicacao:
         )
         self.lbl_texto.pack(pady=10)
 
+    def iniciarSNeSV(self):
+        SNTeste = ServidorNomes()
+        try:
+            SNTeste.iniciar_servidor_nomes("192.168.1.35")
+            self.iniciar_servidor("sv", "192.168.1.35", "192.168.1.35")
+        except Exception as e:
+            messagebox.showwarning("Aviso", "Erro ao criar servidores: {e}")
+
     def tela_agenda(self):
         self.tela_inicial_frame.destroy()
         self.frame_agenda = tk.Frame()
@@ -175,7 +183,9 @@ class Aplicacao:
 
         self.frame_agenda.destroy()
         try:
-            self.sv_mensagens = Pyro4.Proxy("PYRONAME:" + nome_sv + "@" + ip_sn + ":9090")
+            self.sv_mensagens = Pyro4.Proxy(
+                "PYRONAME:" + nome_sv + "@" + ip_sn + ":9090"
+            )
             self.sv_mensagens.addUsuario(nome_usuario)
 
             self.frame_agenda_iniciada = tk.Frame()
@@ -216,7 +226,12 @@ class Aplicacao:
             frame_caixa_usuarios.pack(fill=tk.BOTH, expand=True)
 
             self.lb_usuarios = tk.Listbox(frame_caixa_usuarios, width=50, height=10)
-            self.lb_usuarios.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
+            self.lb_usuarios.pack(
+                side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5
+            )
+
+            for contato in self.usuario.getContatos():
+                self.lb_usuarios.insert(0, contato)
 
             # Adiciona a barra de rolagem se necessário
             scrollbar = tk.Scrollbar(
@@ -232,9 +247,8 @@ class Aplicacao:
                 command=self.telaMensagens,
             )
             self.botao_adicionar.pack(pady=10, side=tk.LEFT)
-        except:
-            messagebox.showerror("Erro","Não foi possível conectar ao servidor")
-        
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
 
     def atualizarStatus(self):
         self.switch.destroy()
@@ -252,9 +266,9 @@ class Aplicacao:
     def telaMensagens(self):
         try:
             selecao = self.lb_usuarios.curselection()[0]
-            nomeContato = self.usuario.getContatos()[selecao]
+            contatoDestino = self.lb_usuarios.get(selecao)
             self.tela_mensagens = tk.Tk()
-            self.tela_mensagens.title(f"Mensagens de {nomeContato}")
+            self.tela_mensagens.title(f"Mensagens de {contatoDestino}")
             self.tela_mensagens.geometry("500x500")
             self.tela_mensagens.tk.call("source", "azure.tcl")
             self.tela_mensagens.tk.call("set_theme", "dark")
@@ -282,35 +296,46 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
-            for mensagem in self.usuario.getMensagens():
+            mensagens = self.usuario.getMensagens()
+            for mensagem in mensagens:
                 nomeUsuarioAtual = self.usuario.getNome()
-                if mensagem.origem == nomeUsuarioAtual or mensagem.destino==nomeUsuarioAtual:
-                    self.printarMsgExterna(mensagem.texto)
+                if (
+                    mensagem.origem == contatoDestino
+                    and mensagem.destino == nomeUsuarioAtual
+                ) or (
+                    mensagem.origem == nomeUsuarioAtual
+                    and mensagem.destino == contatoDestino
+                ):
+                    self.plotarMensagem(mensagem.texto)
 
             self.frame_input = tk.Frame(self.tela_mensagens)
-            self.frame_input.pack(side=tk.BOTTOM,pady=5)
+            self.frame_input.pack(side=tk.BOTTOM, pady=5)
 
             self.input_mensagem = ttk.Entry(self.frame_input)
-            self.input_mensagem.pack(padx=10,side=tk.LEFT)
+            self.input_mensagem.pack(padx=10, side=tk.LEFT)
 
             self.btn_addMsg = ttk.Button(
                 self.frame_input,
                 text="Enviar",
                 style="Accent.TButton",
-                command=self.enviarMensagem,
+                command=lambda: self.enviarMensagem(contatoDestino=contatoDestino),
             )
             self.btn_addMsg.pack(side=tk.RIGHT)
         except Exception as e:
-            messagebox.showwarning("Atenção",e)
+            messagebox.showwarning("Atenção", e)
 
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-    def enviarMensagem(self):
-        self.msg_encaminhada = ttk.Label(self.frame_mensagens,text=self.input_mensagem.get())
-        self.msg_encaminhada.pack()
-    def printarMsgExterna(self,conteudo):
-        self.msg_externa = ttk.Label(self.frame_mensagens,text=conteudo)
+
+    def enviarMensagem(self, contatoDestino):
+        msg = self.input_mensagem.get()
+        self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
+        self.plotarMensagem(conteudo=msg)
+
+    def plotarMensagem(self, conteudo):
+        self.msg_externa = ttk.Label(self.frame_mensagens, text=conteudo)
         self.msg_externa.pack()
+
     def tela_inicial(self):
         self.tela_inicial_frame = tk.Frame(self.tela)
         self.tela_inicial_frame.pack()
@@ -338,6 +363,14 @@ class Aplicacao:
             command=self.tela_agenda,
         )
         self.botao_agenda.pack(pady=10)
+
+        self.botao_teste = ttk.Button(
+            self.tela_inicial_frame,
+            text="Botão de Teste",
+            style="Accent.TButton",
+            command=self.iniciarSNeSV,
+        )
+        self.botao_teste.pack(pady=10)
 
     def telaAdicionarContato(self):
         self.tela_cadastro = tk.Tk()

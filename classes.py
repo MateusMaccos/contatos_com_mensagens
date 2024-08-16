@@ -27,10 +27,10 @@ class Usuario:
         self.user.loop_start()
 
         self.nome = nome
-        self.contatos = []
+        self.contatos = ["jose", "Marte", "Joao", "Carlos"]
         self.mensagens = [
-            Mensagem('jose','mateus','OLÁ MEU BOM'),
-            Mensagem('jose','mateus','OLÁ MEU BOM, COMO VAI?'),
+            Mensagem("jose", "mateus", "OLÁ MEU BOM"),
+            Mensagem("jose", "mateus", "OLÁ MEU BOM, COMO VAI?"),
         ]
         self.status = "online"
 
@@ -42,19 +42,26 @@ class Usuario:
 
     def getContatos(self):
         return self.contatos
-    
+
     def getMensagens(self):
         return self.mensagens
 
-    def enviarMensagem(self, origem, destino, texto):
-        msg = Mensagem(origem, destino, texto)
+    def enviarMensagem(self, destino, texto):
+        msg = Mensagem(self.nome, destino, texto)
         self.mensagens.append(msg)
+        self.user.publish(
+            topic=self.nome,
+            payload=f"{destino}/" + texto,
+        )
 
     def addContato(self, nome):
         self.contatos.append(nome)
 
     def removerContato(self, nome):
         self.contatos.remove(nome)
+
+    def estaOnline(self):
+        return True if self.status == "online" else False
 
     def alternarStatus(self):
         if self.status == "online":

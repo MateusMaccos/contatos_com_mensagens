@@ -1,4 +1,5 @@
 import Pyro4
+import paho.mqtt.client as mqtt
 from classes import Usuario, Mensagem
 
 
@@ -6,12 +7,34 @@ from classes import Usuario, Mensagem
 @Pyro4.behavior(instance_mode="single")
 class ServidorDeMensagens(object):
     def __init__(self):
+        self.server = mqtt.Client(
+            mqtt.CallbackAPIVersion.VERSION1,
+        )
+        self.server.on_message = self.aoReceberMensagem
+        self.server.connect(host="test.mosquitto.org", port=1883)
+        self.server.loop_start()
         self.usuarios = []
+        self.mensagens = []
+
+    def aoReceberMensagem(self, client, userdata, message):
+        mensagemNaoTratada = message.payload.decode()
+        contatoDestino = str(mensagemNaoTratada).split("/")[0]
+        mensagemTratada = str(mensagemNaoTratada).split("/")[1]
+        for usuario in self.usuarios:
+            if usuario.getNome() == contatoDestino and usuario.estaOnline():
+                usuarioOrigem = message.topic
+                self.mensagens.append(
+                    Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
+                )
+
+    def getMensagensArmazenadas(self):
+        return self.mensagens
 
     def addUsuario(self, user):
         usuarioNovo = Usuario(user)
-        self.usuarios.append(usuarioNovo)
         print(usuarioNovo.getNome())
+        self.usuarios.append(usuarioNovo)
+        self.server.subscribe(user)
 
     def getTodosUsuarios(self):
         nomes = []

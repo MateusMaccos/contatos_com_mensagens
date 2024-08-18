@@ -6,6 +6,7 @@ import Pyro4
 import Pyro4.naming
 import threading
 import server
+import time
 
 
 class Aplicacao:
@@ -180,7 +181,7 @@ class Aplicacao:
         ip_sn = self.entrada_ip_sn.get()
         nome_usuario = self.entrada_nome_usuario.get()
         self.usuario = Usuario(nome_usuario)
-
+        self.tela.title(f"Agenda - {self.usuario.getNome()}")
         self.frame_agenda.destroy()
         try:
             self.sv_mensagens = Pyro4.Proxy(
@@ -274,7 +275,7 @@ class Aplicacao:
             self.tela_mensagens.tk.call("set_theme", "dark")
 
             self.frame_scrolavel = tk.Frame(self.tela_mensagens)
-            self.frame_scrolavel.pack()
+            self.frame_scrolavel.pack(fill=tk.BOTH, expand=True)
 
             # Cria um Canvas
             self.canvas = tk.Canvas(self.frame_scrolavel)
@@ -296,17 +297,10 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
-            mensagens = self.usuario.getMensagens()
-            for mensagem in mensagens:
-                nomeUsuarioAtual = self.usuario.getNome()
-                if (
-                    mensagem.origem == contatoDestino
-                    and mensagem.destino == nomeUsuarioAtual
-                ) or (
-                    mensagem.origem == nomeUsuarioAtual
-                    and mensagem.destino == contatoDestino
-                ):
-                    self.plotarMensagem(mensagem.texto)
+            self.thread_msgs = threading.Thread(
+                target=self.atualiza_mensagens, daemon=True, args=(contatoDestino,)
+            )
+            self.thread_msgs.start()
 
             self.frame_input = tk.Frame(self.tela_mensagens)
             self.frame_input.pack(side=tk.BOTTOM, pady=5)
@@ -327,14 +321,47 @@ class Aplicacao:
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    def atualiza_mensagens(self, contatoDestino):
+        try:
+            if self.usuario.estaOnline():
+                if self.frame_mensagens.winfo_children() != []:
+                    for widget in self.frame_mensagens.winfo_children():
+                        widget.destroy()
+                mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
+                    self.usuario.getNome()
+                )
+                self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
+                mensagens = self.usuario.getMensagens()
+                nomeUsuarioAtual = self.usuario.getNome()
+
+                for mensagem in mensagens:
+                    if (
+                        mensagem.origem == contatoDestino
+                        and mensagem.destino == nomeUsuarioAtual
+                    ):
+                        self.plotarMensagem(f"{contatoDestino}: {mensagem.texto}")
+                    elif (
+                        mensagem.origem == nomeUsuarioAtual
+                        and mensagem.destino == contatoDestino
+                    ):
+                        self.plotarMensagem(
+                            conteudo=f"EU: {mensagem.texto}", cor="#c3c3c3"
+                        )
+        except Exception as e:
+            print(e)
+            messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
+
     def enviarMensagem(self, contatoDestino):
         msg = self.input_mensagem.get()
+        self.input_mensagem.delete(0, tk.END)
         self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
-        self.plotarMensagem(conteudo=msg)
+        self.plotarMensagem(conteudo=f"EU: {msg}", cor="#c3c3c3")
 
-    def plotarMensagem(self, conteudo):
-        self.msg_externa = ttk.Label(self.frame_mensagens, text=conteudo)
-        self.msg_externa.pack()
+    def plotarMensagem(self, conteudo, cor="#FFFFFF"):
+        self.msg_externa = ttk.Label(
+            self.frame_mensagens, text=conteudo, foreground=cor, anchor="w"
+        )
+        self.msg_externa.pack(fill=tk.X)
 
     def tela_inicial(self):
         self.tela_inicial_frame = tk.Frame(self.tela)

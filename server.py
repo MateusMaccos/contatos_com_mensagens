@@ -20,17 +20,17 @@ class ServidorDeMensagens(object):
         contatoDestino = str(mensagemNaoTratada).split("/")[0]
         mensagemTratada = str(mensagemNaoTratada).split("/")[1]
         for usuario in self.usuarios:
-            if usuario.getNome() == contatoDestino:
-                if not usuario.estaOnline():
-                    usuarioOrigem = message.topic
-                    usuario.mensagens.append(
-                        Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
-                    )
+            usuarioAtual = usuario.getNome()
+            usuarioOrigem = message.topic
+            if usuarioAtual == contatoDestino or usuarioAtual == usuarioOrigem:
+                usuario.mensagens.append(
+                    Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
+                )
 
     def getMensagensDoUsuario(self, usuarioBuscado):
         for usuario in self.usuarios:
             if usuario.getNome() == usuarioBuscado:
-                return usuario.getMensagens()
+                return usuario.getMensagensPorLista()
 
     def addUsuario(self, user):
         usuarioNovo = Usuario(user)

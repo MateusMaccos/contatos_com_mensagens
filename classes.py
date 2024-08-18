@@ -27,7 +27,7 @@ class Usuario:
         self.user.loop_start()
 
         self.nome = nome
-        self.contatos = ["jose", "Marte", "Joao", "Carlos"]
+        self.contatos = ["jose", "Marte", "Joao", "Carlos", "mateus"]
         self.mensagens = [
             Mensagem("jose", "mateus", "OLÁ MEU BOM"),
             Mensagem("jose", "mateus", "OLÁ MEU BOM, COMO VAI?"),
@@ -45,6 +45,17 @@ class Usuario:
 
     def getMensagens(self):
         return self.mensagens
+
+    def getMensagensPorLista(self):
+        listaMsg = []
+        for mensagem in self.mensagens:
+            listaMsg.append([mensagem.origem, mensagem.destino, mensagem.texto])
+        return listaMsg
+
+    def atualizarMensagensPorLista(self, lista):
+        self.mensagens = []
+        for mensagem in lista:
+            self.mensagens.append(Mensagem(mensagem[0], mensagem[1], mensagem[2]))
 
     def enviarMensagem(self, destino, texto):
         msg = Mensagem(self.nome, destino, texto)

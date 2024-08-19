@@ -138,8 +138,8 @@ class Aplicacao:
     def iniciarSNeSV(self):
         SNTeste = ServidorNomes()
         try:
-            SNTeste.iniciar_servidor_nomes("192.168.1.35")
-            self.iniciar_servidor("sv", "192.168.1.35", "192.168.1.35")
+            SNTeste.iniciar_servidor_nomes("10.110.1.51")
+            self.iniciar_servidor("sv", "10.110.1.51", "10.110.1.51")
         except Exception as e:
             messagebox.showwarning("Aviso", "Erro ao criar servidores: {e}")
 
@@ -273,6 +273,7 @@ class Aplicacao:
             self.tela_mensagens.geometry("500x500")
             self.tela_mensagens.tk.call("source", "azure.tcl")
             self.tela_mensagens.tk.call("set_theme", "dark")
+            self.quantidadeDeMsgsReal=0
 
             self.frame_scrolavel = tk.Frame(self.tela_mensagens)
             self.frame_scrolavel.pack(fill=tk.BOTH, expand=True)
@@ -321,8 +322,9 @@ class Aplicacao:
     def atualiza_mensagens(self, contatoDestino):
         try:
             if self.usuario.estaOnline():
-                self.frame_mensagens.after(500, self.atualiza_mensagens, contatoDestino)
-                if self.frame_mensagens.winfo_children() != []:
+                self.frame_mensagens.after(200, self.atualiza_mensagens, contatoDestino)
+                widgets = self.frame_mensagens.winfo_children()
+                if len(widgets) != self.quantidadeDeMsgsReal or len(widgets)!=0:
                     for widget in self.frame_mensagens.winfo_children():
                         widget.destroy()
                 mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
@@ -345,6 +347,7 @@ class Aplicacao:
                         self.plotarMensagem(
                             conteudo=f"EU: {mensagem.texto}", cor="#c3c3c3"
                         )
+                self.quantidadeDeMsgsReal = len(mensagens)
         except Exception as e:
             print(e)
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")

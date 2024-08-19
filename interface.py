@@ -297,10 +297,7 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
-            self.thread_msgs = threading.Thread(
-                target=self.atualiza_mensagens, daemon=True, args=(contatoDestino,)
-            )
-            self.thread_msgs.start()
+            self.atualiza_mensagens(contatoDestino)
 
             self.frame_input = tk.Frame(self.tela_mensagens)
             self.frame_input.pack(side=tk.BOTTOM, pady=5)
@@ -324,6 +321,7 @@ class Aplicacao:
     def atualiza_mensagens(self, contatoDestino):
         try:
             if self.usuario.estaOnline():
+                self.frame_mensagens.after(500, self.atualiza_mensagens, contatoDestino)
                 if self.frame_mensagens.winfo_children() != []:
                     for widget in self.frame_mensagens.winfo_children():
                         widget.destroy()

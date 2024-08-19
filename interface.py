@@ -248,8 +248,25 @@ class Aplicacao:
                 command=self.telaMensagens,
             )
             self.botao_adicionar.pack(pady=10, side=tk.LEFT)
+
+            self.botao_adicionar = ttk.Button(
+                self.frame_contatos,
+                text="Apagar Contato",
+                command=self.removerContato,
+            )
+            self.botao_adicionar.pack(pady=10, side=tk.RIGHT)
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
+    def removerContato(self):
+        try:
+            selecao = self.lb_usuarios.curselection()[0]
+            contatoSelecionado = self.lb_usuarios.get(selecao)
+            self.usuario.removerContato(contatoSelecionado)
+            self.lb_usuarios.delete(tk.ANCHOR)
+        except IndexError:
+            messagebox.showwarning("Atenção", "Escolha um contato!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível apagar esse contato! {e}")
 
     def atualizarStatus(self):
         self.switch.destroy()
@@ -313,8 +330,10 @@ class Aplicacao:
                 command=lambda: self.enviarMensagem(contatoDestino=contatoDestino),
             )
             self.btn_addMsg.pack(side=tk.RIGHT)
+        except IndexError:
+            messagebox.showwarning("Atenção", "Escolha um contato!")
         except Exception as e:
-            messagebox.showwarning("Atenção", e)
+            messagebox.showwarning("Atenção", "Não foi possível enviar mensagem!")
 
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))

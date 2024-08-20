@@ -177,6 +177,7 @@ class Aplicacao:
         self.botao_iniciar.pack(pady=10)
 
     def tela_agenda_iniciado(self):
+        self.tela.geometry("500x700")
         nome_sv = self.entrada_nome_sv.get()
         ip_sn = self.entrada_ip_sn.get()
         nome_usuario = self.entrada_nome_usuario.get()
@@ -534,7 +535,7 @@ class Aplicacao:
     def run(self):
         self.tela = tk.Tk()
         self.tela.title("Agenda")
-        self.tela.geometry("500x700")
+        self.tela.geometry("500x300")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
         self.tela_inicial()

@@ -27,11 +27,8 @@ class Usuario:
         self.user.loop_start()
 
         self.nome = nome
-        self.contatos = ["jose", "Marte", "Joao", "Carlos", "mateus"]
-        self.mensagens = [
-            Mensagem("jose", "mateus", "OLÁ MEU BOM"),
-            Mensagem("jose", "mateus", "OLÁ MEU BOM, COMO VAI?"),
-        ]
+        self.contatos = []
+        self.mensagens = []
         self.status = "online"
 
     def getNome(self):

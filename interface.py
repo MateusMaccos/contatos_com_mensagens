@@ -203,24 +203,20 @@ class Aplicacao:
             )
             self.botao_adicionar.pack(pady=10, side=tk.LEFT)
 
-            self.frame_status = tk.Frame(self.cabecalho)
-            self.frame_status.pack(side=tk.RIGHT)
+            self.frame_apagar = tk.Frame(self.cabecalho)
+            self.frame_apagar.pack(side=tk.RIGHT)
 
-            self.statusSwitch = tk.BooleanVar()
-            self.statusSwitch.set(self.usuario.getStatus() == "online")
-            self.switch = ttk.Checkbutton(
-                self.frame_status,
-                text=self.usuario.getStatus(),
-                style="Switch.TCheckbutton",
-                command=self.atualizarStatus,
-                variable=self.statusSwitch,
+            self.botao_adicionar = ttk.Button(
+                self.frame_apagar,
+                text="Apagar Contato",
+                command=self.removerContato,
             )
-            self.switch.pack()
+            self.botao_adicionar.pack(pady=10, side=tk.RIGHT)
 
             self.lbl_texto = tk.Label(self.cabecalho, text="Contatos")
             self.lbl_texto.pack(pady=10, padx=50, side=tk.RIGHT)
 
-            self.frame_contatos = tk.Frame()
+            self.frame_contatos = tk.Frame(self.frame_agenda_iniciada)
             self.frame_contatos.pack()
 
             frame_caixa_usuarios = tk.Frame(self.frame_contatos)
@@ -247,20 +243,37 @@ class Aplicacao:
                 style="Accent.TButton",
                 command=self.telaMensagens,
             )
-            self.botao_adicionar.pack(pady=10, side=tk.LEFT)
-
-            self.botao_adicionar = ttk.Button(
-                self.frame_contatos,
-                text="Apagar Contato",
-                command=self.removerContato,
-            )
             self.botao_adicionar.pack(pady=10, side=tk.RIGHT)
+
+            self.frame_switch = tk.Frame(self.frame_contatos)
+            self.frame_switch.pack(side=tk.LEFT)
+
+            self.statusSwitch = tk.BooleanVar()
+            self.statusSwitch.set(self.usuario.getStatus() == "online")
+            self.switch = ttk.Checkbutton(
+                self.frame_switch,
+                text=self.usuario.getStatus(),
+                style="Switch.TCheckbutton",
+                command=self.atualizarStatus,
+                variable=self.statusSwitch,
+            )
+            self.switch.pack()
 
             self.cabecalho_msgs_novas = tk.Frame()
             self.cabecalho_msgs_novas.pack()
 
+            separator = tk.Frame(
+                self.frame_agenda_iniciada, height=2, bd=1, relief=tk.SUNKEN
+            )
+            separator.pack(fill="x", padx=5, pady=5)
+
             self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
-            self.lbl_texto.pack(pady=20, padx=20)
+            self.lbl_texto.pack(pady=5, padx=5)
+
+            separator = tk.Frame(
+                self.cabecalho_msgs_novas, height=2, bd=1, relief=tk.SUNKEN
+            )
+            separator.pack(fill="x", padx=5, pady=5)
 
             self.frame_scrolavel = tk.Frame()
             self.frame_scrolavel.pack()
@@ -308,7 +321,7 @@ class Aplicacao:
         self.usuario.alternarStatus()
         self.statusSwitch.set(self.usuario.getStatus() == "online")
         self.switch = ttk.Checkbutton(
-            self.frame_status,
+            self.frame_switch,
             text=self.usuario.getStatus(),
             style="Switch.TCheckbutton",
             command=self.atualizarStatus,
@@ -438,14 +451,14 @@ class Aplicacao:
 
     def enviarMensagem(self, contatoDestino):
         msg = self.input_mensagem.get()
-        if msg!= "":
+        if msg != "":
             self.input_mensagem.delete(0, tk.END)
             self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
             self.plotarMensagem(
                 conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
             )
         else:
-            messagebox.showwarning("Atenção","Digite alguma coisa!")
+            messagebox.showwarning("Atenção", "Digite alguma coisa!")
 
     def plotarMensagem(self, conteudo, frame, cor="#FFFFFF"):
         self.msg_externa = ttk.Label(frame, text=conteudo, foreground=cor, anchor="w")
@@ -521,7 +534,7 @@ class Aplicacao:
     def run(self):
         self.tela = tk.Tk()
         self.tela.title("Agenda")
-        self.tela.geometry("1200x700")
+        self.tela.geometry("500x700")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
         self.tela_inicial()

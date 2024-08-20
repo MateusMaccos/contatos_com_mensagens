@@ -376,7 +376,6 @@ class Aplicacao:
     def atualiza_mensagens_novas(self):
         try:
             self.frame_mensagens_novas.after(200, self.atualiza_mensagens_novas)
-            print(self.usuario.estaOnline())
             if self.usuario.estaOnline():
                 widgets = self.frame_mensagens_novas.winfo_children()
                 if len(widgets) != self.quantidadeDeMsgsNovas or len(widgets) != 0:
@@ -398,7 +397,6 @@ class Aplicacao:
                         contador = contador + 1
                 self.quantidadeDeMsgsNovas = contador
         except Exception as e:
-            print(e)
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
 
     def atualiza_mensagens(self, contatoDestino):
@@ -436,16 +434,18 @@ class Aplicacao:
                         )
                 self.quantidadeDeMsgsReal = len(mensagens)
         except Exception as e:
-            print(e)
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
 
     def enviarMensagem(self, contatoDestino):
         msg = self.input_mensagem.get()
-        self.input_mensagem.delete(0, tk.END)
-        self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
-        self.plotarMensagem(
-            conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
-        )
+        if msg!= "":
+            self.input_mensagem.delete(0, tk.END)
+            self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
+            self.plotarMensagem(
+                conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
+            )
+        else:
+            messagebox.showwarning("Atenção","Digite alguma coisa!")
 
     def plotarMensagem(self, conteudo, frame, cor="#FFFFFF"):
         self.msg_externa = ttk.Label(frame, text=conteudo, foreground=cor, anchor="w")
@@ -510,8 +510,13 @@ class Aplicacao:
 
     def adicionarContato(self):
         contato = self.entrada_nome_contato.get()
-        self.usuario.addContato(contato)
-        self.lb_usuarios.insert(tk.END, contato)
+        if contato in self.usuario.contatos:
+            messagebox.showwarning("Atenção", "Esse contato já existe na sua lista!")
+        elif contato != self.usuario.nome:
+            self.usuario.addContato(contato)
+            self.lb_usuarios.insert(tk.END, contato)
+        else:
+            messagebox.showwarning("Atenção", "Esse contato é você!")
 
     def run(self):
         self.tela = tk.Tk()

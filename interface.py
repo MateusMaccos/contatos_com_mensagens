@@ -138,10 +138,10 @@ class Aplicacao:
     def iniciarSNeSV(self):
         SNTeste = ServidorNomes()
         try:
-            SNTeste.iniciar_servidor_nomes("10.110.1.51")
-            self.iniciar_servidor("sv", "10.110.1.51", "10.110.1.51")
+            SNTeste.iniciar_servidor_nomes("192.168.1.35")
+            self.iniciar_servidor("sv", "192.168.1.35", "192.168.1.35")
         except Exception as e:
-            messagebox.showwarning("Aviso", "Erro ao criar servidores: {e}")
+            messagebox.showwarning("Aviso", f"Erro ao criar servidores: {e}")
 
     def tela_agenda(self):
         self.tela_inicial_frame.destroy()
@@ -255,8 +255,43 @@ class Aplicacao:
                 command=self.removerContato,
             )
             self.botao_adicionar.pack(pady=10, side=tk.RIGHT)
+
+            self.cabecalho_msgs_novas = tk.Frame()
+            self.cabecalho_msgs_novas.pack()
+
+            self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
+            self.lbl_texto.pack(pady=20, padx=20)
+
+            self.frame_scrolavel = tk.Frame()
+            self.frame_scrolavel.pack()
+
+            # Cria um Canvas
+            self.canvas = tk.Canvas(self.frame_scrolavel)
+            self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            # Adiciona barras de rolagem
+            self.scrollbar_vertical = tk.Scrollbar(
+                self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
+            )
+            self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Configuração do Canvas
+            self.canvas.configure(
+                yscrollcommand=self.scrollbar_vertical.set,
+            )
+            self.canvas.bind("<Configure>", self.on_canvas_configure_client)
+
+            # Adiciona um frame para o conteúdo
+            self.frame_mensagens_novas = tk.Frame(self.canvas)
+            self.canvas.create_window(
+                (0, 0), window=self.frame_mensagens_novas, anchor="nw"
+            )
+            self.quantidadeDeMsgsNovas = 0
+            self.atualiza_mensagens_novas()
+
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
+
     def removerContato(self):
         try:
             selecao = self.lb_usuarios.curselection()[0]
@@ -290,7 +325,7 @@ class Aplicacao:
             self.tela_mensagens.geometry("500x500")
             self.tela_mensagens.tk.call("source", "azure.tcl")
             self.tela_mensagens.tk.call("set_theme", "dark")
-            self.quantidadeDeMsgsReal=0
+            self.quantidadeDeMsgsReal = 0
 
             self.frame_scrolavel = tk.Frame(self.tela_mensagens)
             self.frame_scrolavel.pack(fill=tk.BOTH, expand=True)
@@ -338,12 +373,40 @@ class Aplicacao:
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    def atualiza_mensagens_novas(self):
+        try:
+            self.frame_mensagens_novas.after(200, self.atualiza_mensagens_novas)
+            print(self.usuario.estaOnline())
+            if self.usuario.estaOnline():
+                widgets = self.frame_mensagens_novas.winfo_children()
+                if len(widgets) != self.quantidadeDeMsgsNovas or len(widgets) != 0:
+                    for widget in self.frame_mensagens_novas.winfo_children():
+                        widget.destroy()
+                mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
+                    self.usuario.getNome()
+                )
+                self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
+                mensagens = self.usuario.getMensagens()
+                nomeUsuarioAtual = self.usuario.getNome()
+                contador = 0
+                for mensagem in mensagens:
+                    if mensagem.destino == nomeUsuarioAtual:
+                        self.plotarMensagem(
+                            conteudo=f"{mensagem.origem}: {mensagem.texto}",
+                            frame=self.frame_mensagens_novas,
+                        )
+                        contador = contador + 1
+                self.quantidadeDeMsgsNovas = contador
+        except Exception as e:
+            print(e)
+            messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
+
     def atualiza_mensagens(self, contatoDestino):
         try:
+            self.frame_mensagens.after(200, self.atualiza_mensagens, contatoDestino)
             if self.usuario.estaOnline():
-                self.frame_mensagens.after(200, self.atualiza_mensagens, contatoDestino)
                 widgets = self.frame_mensagens.winfo_children()
-                if len(widgets) != self.quantidadeDeMsgsReal or len(widgets)!=0:
+                if len(widgets) != self.quantidadeDeMsgsReal or len(widgets) != 0:
                     for widget in self.frame_mensagens.winfo_children():
                         widget.destroy()
                 mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
@@ -358,13 +421,18 @@ class Aplicacao:
                         mensagem.origem == contatoDestino
                         and mensagem.destino == nomeUsuarioAtual
                     ):
-                        self.plotarMensagem(f"{contatoDestino}: {mensagem.texto}")
+                        self.plotarMensagem(
+                            conteudo=f"{contatoDestino}: {mensagem.texto}",
+                            frame=self.frame_mensagens,
+                        )
                     elif (
                         mensagem.origem == nomeUsuarioAtual
                         and mensagem.destino == contatoDestino
                     ):
                         self.plotarMensagem(
-                            conteudo=f"EU: {mensagem.texto}", cor="#c3c3c3"
+                            conteudo=f"EU: {mensagem.texto}",
+                            frame=self.frame_mensagens,
+                            cor="#c3c3c3",
                         )
                 self.quantidadeDeMsgsReal = len(mensagens)
         except Exception as e:
@@ -375,12 +443,12 @@ class Aplicacao:
         msg = self.input_mensagem.get()
         self.input_mensagem.delete(0, tk.END)
         self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
-        self.plotarMensagem(conteudo=f"EU: {msg}", cor="#c3c3c3")
-
-    def plotarMensagem(self, conteudo, cor="#FFFFFF"):
-        self.msg_externa = ttk.Label(
-            self.frame_mensagens, text=conteudo, foreground=cor, anchor="w"
+        self.plotarMensagem(
+            conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
         )
+
+    def plotarMensagem(self, conteudo, frame, cor="#FFFFFF"):
+        self.msg_externa = ttk.Label(frame, text=conteudo, foreground=cor, anchor="w")
         self.msg_externa.pack(fill=tk.X)
 
     def tela_inicial(self):
@@ -448,7 +516,7 @@ class Aplicacao:
     def run(self):
         self.tela = tk.Tk()
         self.tela.title("Agenda")
-        self.tela.geometry("1200x500")
+        self.tela.geometry("1200x700")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
         self.tela_inicial()

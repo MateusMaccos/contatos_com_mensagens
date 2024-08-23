@@ -16,9 +16,10 @@ def main():
 
     channel.queue_declare(queue="hello")
 
+    # channel.queue_delete(queue="hello")
     def callback(ch, method, properties, body):
-        print(f" [x] Received {body}")
-        channel.basic_cancel(consumer_tag="cliente")
+        print(f" [x] Received {body.decode()}")
+        # channel.basic_cancel(consumer_tag="cliente")
 
     channel.basic_consume(
         queue="hello",

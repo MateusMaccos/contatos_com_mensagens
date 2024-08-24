@@ -61,16 +61,18 @@ class Mensagem:
 
 
 @Pyro4.expose
-class Usuario:
-    def __init__(self, nome):
+@Pyro4.behavior(instance_mode="single")
+class Usuario(object):
+    def __init__(self, nome, svNomes):
         self.nome = nome
+        self.svNomes = svNomes
         self.register()
         self.contatos = []
         self.mensagens = []
         self.status = "online"
 
     def register(self):
-        ns = Pyro4.locateNS()
+        ns = Pyro4.locateNS(host=self.svNomes, port=9090)
 
         daemon = Pyro4.Daemon()
 
@@ -85,6 +87,11 @@ class Usuario:
             daemon=True,
         )
         threadUsuario.start()
+
+        objetos_registrados = ns.list()
+        print("Objetos registrados no servidor de nomes:")
+        for nome, uri in objetos_registrados.items():
+            print(f"{nome}: {uri}")
 
     def getNome(self):
         return self.nome
@@ -120,7 +127,7 @@ class Usuario:
             destino_uri = ns.lookup(destino)
             print(destino_uri)
             destino_instancia = Pyro4.Proxy(destino_uri)
-            print(destino_instancia.nome)
+            print(destino_instancia.getNome())
             if destino_instancia.estaOnline():
                 destino_instancia.receberMensagem(self.nome, texto)
                 print(f"texto enviado para {destino} no online: {texto}")
@@ -141,8 +148,11 @@ class Usuario:
     def estaOnline(self):
         return True if self.status == "online" else False
 
-    def alternarStatus(self):
+    def alternarStatus(self, sv_mensagens):
         if self.status == "online":
             self.status = "offline"
         else:
+            print("entrou aqui")
+            mensagensDoServidor = sv_mensagens.getMensagensDoUsuario(self.nome)
+            self.atualizarMensagensPorLista(mensagensDoServidor)
             self.status = "online"

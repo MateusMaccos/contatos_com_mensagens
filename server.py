@@ -26,10 +26,9 @@ class ServidorDeMensagens(object):
         return mensagens
 
     def addUsuario(self, user):
-        usuarioNovo = Usuario(user)
-        print(usuarioNovo.getNome())
+        print(user)
         self.broker.criar_fila(user)
-        self.usuarios.append(usuarioNovo)
+        self.usuarios.append(user)
 
     def getTodosUsuarios(self):
         nomes = []

@@ -138,8 +138,8 @@ class Aplicacao:
     def iniciarSNeSV(self):
         SNTeste = ServidorNomes()
         try:
-            SNTeste.iniciar_servidor_nomes("192.168.1.35")
-            self.iniciar_servidor("sv", "192.168.1.35", "192.168.1.35")
+            SNTeste.iniciar_servidor_nomes("192.168.1.11")
+            self.iniciar_servidor("sv", "192.168.1.11", "192.168.1.11")
         except Exception as e:
             messagebox.showwarning("Aviso", f"Erro ao criar servidores: {e}")
 
@@ -181,7 +181,7 @@ class Aplicacao:
         nome_sv = self.entrada_nome_sv.get()
         ip_sn = self.entrada_ip_sn.get()
         nome_usuario = self.entrada_nome_usuario.get()
-        self.usuario = Usuario(nome_usuario)
+        self.usuario = Usuario(nome_usuario, ip_sn)
         self.tela.title(f"Agenda - {self.usuario.getNome()}")
         self.frame_agenda.destroy()
         try:
@@ -319,7 +319,7 @@ class Aplicacao:
 
     def atualizarStatus(self):
         self.switch.destroy()
-        self.usuario.alternarStatus()
+        self.usuario.alternarStatus(self.sv_mensagens)
         self.statusSwitch.set(self.usuario.getStatus() == "online")
         self.switch = ttk.Checkbutton(
             self.frame_switch,
@@ -364,13 +364,14 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
-            self.estavaOffline = False
             self.atualiza_mensagens(contatoDestino)
 
             self.frame_input = tk.Frame(self.tela_mensagens)
             self.frame_input.pack(side=tk.BOTTOM, pady=5)
 
-            self.input_mensagem = ttk.Entry(self.frame_input)
+            self.input_mensagem = ttk.Entry(
+                self.frame_input,
+            )
             self.input_mensagem.pack(padx=10, side=tk.LEFT)
 
             self.btn_addMsg = ttk.Button(
@@ -380,13 +381,22 @@ class Aplicacao:
                 command=lambda: self.enviarMensagem(contatoDestino=contatoDestino),
             )
             self.btn_addMsg.pack(side=tk.RIGHT)
+            self.atualiza_botao()
+
         except IndexError:
             messagebox.showwarning("Atenção", "Escolha um contato!")
         except Exception as e:
-            messagebox.showwarning("Atenção", "Não foi possível enviar mensagem!")
+            messagebox.showwarning("Atenção", f"Não foi possível enviar mensagem! {e}")
+            print(e)
 
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def atualiza_botao(self):
+        self.frame_input.after(200, self.atualiza_botao)
+        estado_atual = "normal" if self.usuario.estaOnline() else "disabled"
+        self.btn_addMsg.config(state=estado_atual)
+        self.input_mensagem.config(state=estado_atual)
 
     def atualiza_mensagens_novas(self):
         try:
@@ -417,43 +427,33 @@ class Aplicacao:
     def atualiza_mensagens(self, contatoDestino):
         try:
             self.frame_mensagens.after(200, self.atualiza_mensagens, contatoDestino)
-            if self.usuario.estaOnline():
-                widgets = self.frame_mensagens.winfo_children()
-                if len(widgets) != self.quantidadeDeMsgsReal or len(widgets) != 0:
-                    for widget in self.frame_mensagens.winfo_children():
-                        widget.destroy()
+            widgets = self.frame_mensagens.winfo_children()
+            if len(widgets) != self.quantidadeDeMsgsReal or len(widgets) != 0:
+                for widget in self.frame_mensagens.winfo_children():
+                    widget.destroy()
 
-                if self.estavaOffline:
-                    mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
-                        self.usuario.getNome()
+            mensagens = self.usuario.getMensagens()
+            nomeUsuarioAtual = self.usuario.getNome()
+
+            for mensagem in mensagens:
+                if (
+                    mensagem.origem == contatoDestino
+                    and mensagem.destino == nomeUsuarioAtual
+                ):
+                    self.plotarMensagem(
+                        conteudo=f"{contatoDestino}: {mensagem.texto}",
+                        frame=self.frame_mensagens,
                     )
-                    self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
-
-                mensagens = self.usuario.getMensagens()
-                nomeUsuarioAtual = self.usuario.getNome()
-
-                for mensagem in mensagens:
-                    if (
-                        mensagem.origem == contatoDestino
-                        and mensagem.destino == nomeUsuarioAtual
-                    ):
-                        self.plotarMensagem(
-                            conteudo=f"{contatoDestino}: {mensagem.texto}",
-                            frame=self.frame_mensagens,
-                        )
-                    elif (
-                        mensagem.origem == nomeUsuarioAtual
-                        and mensagem.destino == contatoDestino
-                    ):
-                        self.plotarMensagem(
-                            conteudo=f"EU: {mensagem.texto}",
-                            frame=self.frame_mensagens,
-                            cor="#c3c3c3",
-                        )
-                self.quantidadeDeMsgsReal = len(mensagens)
-                self.estavaOffline = False
-            else:
-                self.estavaOffline = True
+                elif (
+                    mensagem.origem == nomeUsuarioAtual
+                    and mensagem.destino == contatoDestino
+                ):
+                    self.plotarMensagem(
+                        conteudo=f"EU: {mensagem.texto}",
+                        frame=self.frame_mensagens,
+                        cor="#c3c3c3",
+                    )
+            self.quantidadeDeMsgsReal = len(mensagens)
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
             print(e)

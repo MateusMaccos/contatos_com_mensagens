@@ -17,10 +17,10 @@ class BrokerMensagens:
         queue_name = queue
         self.channel.queue_declare(queue=queue_name)
 
-    def enviar_mensagem_ao_usuario(self, queue, message):
+    def enviar_mensagem_ao_usuario(self, origem, queue, message):
         queue_name = queue
         self.channel.basic_publish(
-            exchange="", routing_key=queue_name, body=f"{queue}:{message}"
+            exchange="", routing_key=queue_name, body=f"{origem}:{message}"
         )
         print(f"Enviada mensagem para {queue_name}")
 
@@ -80,8 +80,6 @@ class Usuario(object):
 
         ns.register(self.nome, uri)
 
-        print(f"{self.nome} registered with URI: {uri}")
-
         threadUsuario = threading.Thread(
             target=daemon.requestLoop,
             daemon=True,
@@ -89,9 +87,6 @@ class Usuario(object):
         threadUsuario.start()
 
         objetos_registrados = ns.list()
-        print("Objetos registrados no servidor de nomes:")
-        for nome, uri in objetos_registrados.items():
-            print(f"{nome}: {uri}")
 
     def getNome(self):
         return self.nome
@@ -116,7 +111,6 @@ class Usuario(object):
             self.mensagens.append(Mensagem(mensagem[0], mensagem[1], mensagem[2]))
 
     def receberMensagem(self, origem, texto):
-        print(f"Recebeu mensagem de {origem}: {texto}")
         self.mensagens.append(Mensagem(origem, self.nome, texto))
 
     def enviarMensagem(self, destino, texto, sv_mensagens):
@@ -125,17 +119,27 @@ class Usuario(object):
         ns = Pyro4.locateNS()
         try:
             destino_uri = ns.lookup(destino)
-            print(destino_uri)
             destino_instancia = Pyro4.Proxy(destino_uri)
-            print(destino_instancia.getNome())
             if destino_instancia.estaOnline():
                 destino_instancia.receberMensagem(self.nome, texto)
-                print(f"texto enviado para {destino} no online: {texto}")
             else:
-                sv_mensagens.enviarMensagemParaOffline(destino, texto)
-                print(f"texto enviado para {destino} no offline: {texto}")
+                sv_mensagens.enviarMensagemParaOffline(self.nome, destino, texto)
         except Pyro4.errors.NamingError:
-            print(f"Usuário {destino} n encontrado.")
+            print(f"Usuário {destino} não encontrado.")
+        except Exception as e:
+            print(f"Error: {e}")
+
+    def verificaSeUsuarioEstaOnline(self, usuario):
+        ns = Pyro4.locateNS()
+        try:
+            usuario_uri = ns.lookup(usuario)
+            usuario_instancia = Pyro4.Proxy(usuario_uri)
+            if usuario_instancia.estaOnline():
+                return True
+            else:
+                return False
+        except Pyro4.errors.NamingError:
+            print(f"Usuário {usuario} não encontrado.")
         except Exception as e:
             print(f"Error: {e}")
 
@@ -145,6 +149,9 @@ class Usuario(object):
     def removerContato(self, nome):
         self.contatos.remove(nome)
 
+    def apagarFila(self, sv_mensagens):
+        sv_mensagens.apagarFila(self.nome)
+
     def estaOnline(self):
         return True if self.status == "online" else False
 
@@ -152,7 +159,6 @@ class Usuario(object):
         if self.status == "online":
             self.status = "offline"
         else:
-            print("entrou aqui")
             mensagensDoServidor = sv_mensagens.getMensagensDoUsuario(self.nome)
             self.atualizarMensagensPorLista(mensagensDoServidor)
             self.status = "online"

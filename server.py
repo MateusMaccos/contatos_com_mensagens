@@ -14,8 +14,8 @@ class ServidorDeMensagens(object):
             vhost="unygrgmp",
         )
 
-    def enviarMensagemParaOffline(self, destino, msg):
-        self.broker.enviar_mensagem_ao_usuario(destino, msg)
+    def enviarMensagemParaOffline(self, origem, destino, msg):
+        self.broker.enviar_mensagem_ao_usuario(origem, destino, msg)
 
     def getMensagensDoUsuario(self, usuarioBuscado):
         mensagens = []
@@ -35,6 +35,9 @@ class ServidorDeMensagens(object):
         for usuario in self.usuarios:
             nomes.append(usuario.nome)
         return nomes
+
+    def apagarFila(self, usuario):
+        self.broker.channel.queue_delete(queue=usuario)
 
 
 def iniciar(nomeSV, ipNS, ipSV):

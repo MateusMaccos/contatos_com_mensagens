@@ -176,6 +176,10 @@ class Aplicacao:
         )
         self.botao_iniciar.pack(pady=10)
 
+    def fechar_janela(self):
+        self.usuario.apagarFila(self.sv_mensagens)
+        self.tela.destroy()
+
     def tela_agenda_iniciado(self):
         self.tela.geometry("500x700")
         nome_sv = self.entrada_nome_sv.get()
@@ -192,7 +196,7 @@ class Aplicacao:
 
             self.frame_agenda_iniciada = tk.Frame()
             self.frame_agenda_iniciada.pack()
-
+            self.tela.protocol(name="WM_DELETE_WINDOW", func=self.fechar_janela)
             self.cabecalho = tk.Frame(self.frame_agenda_iniciada)
             self.cabecalho.pack()
 
@@ -260,48 +264,48 @@ class Aplicacao:
             )
             self.switch.pack()
 
-            # self.cabecalho_msgs_novas = tk.Frame()
-            # self.cabecalho_msgs_novas.pack()
+            self.cabecalho_msgs_novas = tk.Frame()
+            self.cabecalho_msgs_novas.pack()
 
-            # separator = tk.Frame(
-            #     self.frame_agenda_iniciada, height=2, bd=1, relief=tk.SUNKEN
-            # )
-            # separator.pack(fill="x", padx=5, pady=5)
+            separator = tk.Frame(
+                self.frame_agenda_iniciada, height=2, bd=1, relief=tk.SUNKEN
+            )
+            separator.pack(fill="x", padx=5, pady=5)
 
-            # self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
-            # self.lbl_texto.pack(pady=5, padx=5)
+            self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
+            self.lbl_texto.pack(pady=5, padx=5)
 
-            # separator = tk.Frame(
-            #     self.cabecalho_msgs_novas, height=2, bd=1, relief=tk.SUNKEN
-            # )
-            # separator.pack(fill="x", padx=5, pady=5)
+            separator = tk.Frame(
+                self.cabecalho_msgs_novas, height=2, bd=1, relief=tk.SUNKEN
+            )
+            separator.pack(fill="x", padx=5, pady=5)
 
-            # self.frame_scrolavel = tk.Frame()
-            # self.frame_scrolavel.pack()
+            self.frame_scrolavel = tk.Frame()
+            self.frame_scrolavel.pack()
 
-            # # Cria um Canvas
-            # self.canvas = tk.Canvas(self.frame_scrolavel)
-            # self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            # Cria um Canvas
+            self.canvas = tk.Canvas(self.frame_scrolavel)
+            self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-            # # Adiciona barras de rolagem
-            # self.scrollbar_vertical = tk.Scrollbar(
-            #     self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
-            # )
-            # self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
+            # Adiciona barras de rolagem
+            self.scrollbar_vertical = tk.Scrollbar(
+                self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
+            )
+            self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
 
-            # # Configuração do Canvas
-            # self.canvas.configure(
-            #     yscrollcommand=self.scrollbar_vertical.set,
-            # )
-            # self.canvas.bind("<Configure>", self.on_canvas_configure_client)
+            # Configuração do Canvas
+            self.canvas.configure(
+                yscrollcommand=self.scrollbar_vertical.set,
+            )
+            self.canvas.bind("<Configure>", self.on_canvas_configure_client)
 
-            # # Adiciona um frame para o conteúdo
-            # self.frame_mensagens_novas = tk.Frame(self.canvas)
-            # self.canvas.create_window(
-            #     (0, 0), window=self.frame_mensagens_novas, anchor="nw"
-            # )
-            # self.quantidadeDeMsgsNovas = 0
-            # self.atualiza_mensagens_novas()
+            # Adiciona um frame para o conteúdo
+            self.frame_mensagens_novas = tk.Frame(self.canvas)
+            self.canvas.create_window(
+                (0, 0), window=self.frame_mensagens_novas, anchor="nw"
+            )
+            self.quantidadeDeMsgsNovas = 0
+            self.atualiza_mensagens_novas()
 
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
@@ -401,26 +405,21 @@ class Aplicacao:
     def atualiza_mensagens_novas(self):
         try:
             self.frame_mensagens_novas.after(200, self.atualiza_mensagens_novas)
-            if self.usuario.estaOnline():
-                widgets = self.frame_mensagens_novas.winfo_children()
-                if len(widgets) != self.quantidadeDeMsgsNovas or len(widgets) != 0:
-                    for widget in self.frame_mensagens_novas.winfo_children():
-                        widget.destroy()
-                mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
-                    self.usuario.getNome()
-                )
-                self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
-                mensagens = self.usuario.getMensagens()
-                nomeUsuarioAtual = self.usuario.getNome()
-                contador = 0
-                for mensagem in mensagens:
-                    if mensagem.destino == nomeUsuarioAtual:
-                        self.plotarMensagem(
-                            conteudo=f"{mensagem.origem}: {mensagem.texto}",
-                            frame=self.frame_mensagens_novas,
-                        )
-                        contador = contador + 1
-                self.quantidadeDeMsgsNovas = contador
+            widgets = self.frame_mensagens_novas.winfo_children()
+            if len(widgets) != self.quantidadeDeMsgsNovas or len(widgets) != 0:
+                for widget in self.frame_mensagens_novas.winfo_children():
+                    widget.destroy()
+            mensagens = self.usuario.getMensagens()
+            nomeUsuarioAtual = self.usuario.getNome()
+            contador = 0
+            for mensagem in mensagens:
+                if mensagem.destino == nomeUsuarioAtual:
+                    self.plotarMensagem(
+                        conteudo=f"{mensagem.origem}: {mensagem.texto}",
+                        frame=self.frame_mensagens_novas,
+                    )
+                    contador = contador + 1
+            self.quantidadeDeMsgsNovas = contador
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
 

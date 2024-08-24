@@ -1,42 +1,35 @@
 import Pyro4
-import paho.mqtt.client as mqtt
-from classes import Usuario, Mensagem
+from classes import Usuario, Mensagem, BrokerMensagens
 
 
 @Pyro4.expose
 @Pyro4.behavior(instance_mode="single")
 class ServidorDeMensagens(object):
     def __init__(self):
-        self.server = mqtt.Client(
-            mqtt.CallbackAPIVersion.VERSION1,
-        )
-        self.server.on_message = self.aoReceberMensagem
-        self.server.connect(host="test.mosquitto.org", port=1883)
-        self.server.loop_start()
         self.usuarios = []
+        self.broker = BrokerMensagens(
+            rabbitmq_host="jackal-01.rmq.cloudamqp.com",
+            username="unygrgmp",
+            password="jRtbPlY8eHLOXUIFP8Oz06GaIVMAXtjh",
+            vhost="unygrgmp",
+        )
 
-    def aoReceberMensagem(self, client, userdata, message):
-        mensagemNaoTratada = message.payload.decode()
-        contatoDestino = str(mensagemNaoTratada).split("/")[0]
-        mensagemTratada = str(mensagemNaoTratada).split("/")[1]
-        for usuario in self.usuarios:
-            usuarioAtual = usuario.getNome()
-            usuarioOrigem = message.topic
-            if usuarioAtual == contatoDestino or usuarioAtual == usuarioOrigem:
-                usuario.mensagens.append(
-                    Mensagem(usuarioOrigem, contatoDestino, mensagemTratada)
-                )
+    def enviarMensagemParaOffline(self, destino, msg):
+        self.broker.enviar_mensagem_ao_usuario(destino, msg)
 
     def getMensagensDoUsuario(self, usuarioBuscado):
-        for usuario in self.usuarios:
-            if usuario.getNome() == usuarioBuscado:
-                return usuario.getMensagensPorLista()
+        mensagens = []
+        for mensagem in self.broker.receber_mensagens_do_usuario(usuarioBuscado):
+            origem = str(mensagem).split(":")[0]
+            conteudo = str(mensagem).split(":")[1]
+            mensagens.append([origem, usuarioBuscado, conteudo])
+        return mensagens
 
     def addUsuario(self, user):
         usuarioNovo = Usuario(user)
         print(usuarioNovo.getNome())
+        self.broker.criar_fila(user)
         self.usuarios.append(usuarioNovo)
-        self.server.subscribe(user)
 
     def getTodosUsuarios(self):
         nomes = []

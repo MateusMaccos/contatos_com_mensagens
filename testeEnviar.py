@@ -1,7 +1,7 @@
 import pika
 
 
-class MessageMiddleware:
+class BrokerMensagens:
     def __init__(self, rabbitmq_host, username, password, vhost):
         self.connection_params = pika.ConnectionParameters(
             host=rabbitmq_host,
@@ -11,37 +11,39 @@ class MessageMiddleware:
         self.connection = pika.BlockingConnection(self.connection_params)
         self.channel = self.connection.channel()
 
-    def create_user_queue(self, user_id):
-        queue_name = f"user_{user_id}"
+    def criar_fila(self, queue):
+        queue_name = queue
         self.channel.queue_declare(queue=queue_name)
-        return queue_name
 
-    def send_message_to_user(self, user_id, message):
-        queue_name = f"user_{user_id}"
+    def enviar_mensagem_ao_usuario(self, queue, message):
+        queue_name = queue
         self.channel.basic_publish(exchange="", routing_key=queue_name, body=message)
-        print(f"Sent message to {queue_name}")
+        print(f"Enviada mensagem para {queue_name}")
 
-    def receive_messages_for_user(self, user_id, callback):
-        queue_name = f"user_{user_id}"
-        self.channel.basic_consume(
-            queue=queue_name,
-            on_message_callback=callback,
-            auto_ack=True,
-        )
-        print(f"[*] Waiting for messages for user {user_id}. To exit press CTRL+C")
-        self.channel.start_consuming()
+    def receber_mensagens_do_usuario(self, queue):
+        mensagens = []
+        while True:
+            method_frame, header_frame, body = self.channel.basic_get(
+                queue=queue, auto_ack=False
+            )
 
-    def close_connection(self):
+            if method_frame:
+                msg = body.decode("utf-8")
+                print(f"Mensagem recebida: {msg}")
+                self.channel.basic_ack(delivery_tag=method_frame.delivery_tag)
+                mensagens.append(msg)
+            else:
+                print("Nenhuma mensagem disponível na fila.")
+                break
+
+        return mensagens
+
+    def encerrar_conexao(self):
         self.connection.close()
 
 
-# Exemplo de uso
-def message_callback(ch, method, properties, body):
-    print(f" [x] Received: {body.decode()}")
-
-
 if __name__ == "__main__":
-    middleware = MessageMiddleware(
+    middleware = BrokerMensagens(
         rabbitmq_host="jackal-01.rmq.cloudamqp.com",
         username="unygrgmp",
         password="jRtbPlY8eHLOXUIFP8Oz06GaIVMAXtjh",
@@ -49,13 +51,14 @@ if __name__ == "__main__":
     )
 
     # Criar uma fila para um usuário específico
-    user_queue = middleware.create_user_queue(user_id="123")
+    middleware.criar_fila(queue="user_123")
 
     # Enviar uma mensagem para o usuário 123
-    middleware.send_message_to_user(user_id="123", message="Hello User 123!")
+    middleware.enviar_mensagem_ao_usuario(queue="user_123", message="Hello User 123!")
+    middleware.enviar_mensagem_ao_usuario(queue="user_123", message="Hello Users!")
+    middleware.enviar_mensagem_ao_usuario(queue="user_123", message="Hey Users!")
 
-    # Consumir mensagens da fila do usuário 123
-    middleware.receive_messages_for_user(user_id="123", callback=message_callback)
+    middleware.receber_mensagens_do_usuario(queue="user_123")
 
     # Fechar a conexão quando terminar
     middleware.close_connection()

@@ -1,43 +1,51 @@
-#!/usr/bin/env python
-import pika, sys, os
+import Pyro4
+import threading
 
 
-def main():
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host="jackal-01.rmq.cloudamqp.com",
-            credentials=pika.PlainCredentials(
-                "unygrgmp", "jRtbPlY8eHLOXUIFP8Oz06GaIVMAXtjh"
-            ),
-            virtual_host="unygrgmp",
-        )
-    )
-    channel = connection.channel()
+@Pyro4.expose
+class ChatClient:
+    def __init__(self, username):
+        self.username = username
 
-    channel.queue_declare(queue="hello")
+    def receive_message(self, sender, message):
+        print(f"Message from {sender}: {message}")
 
-    # channel.queue_delete(queue="hello")
-    def callback(ch, method, properties, body):
-        print(f" [x] Received {body.decode()}")
-        # channel.basic_cancel(consumer_tag="cliente")
+    def register(self):
+        # Conecta ao servidor de nomes
+        ns = Pyro4.locateNS()
 
-    channel.basic_consume(
-        queue="hello",
-        on_message_callback=callback,
-        auto_ack=True,
-        consumer_tag="cliente",
-    )
+        # Inicia um daemon Pyro para o cliente
+        daemon = Pyro4.Daemon()
 
-    print(" [*] Waiting for messages. To exit press CTRL+C")
-    channel.start_consuming()
+        # Registra o cliente no daemon
+        uri = daemon.register(self)
+
+        # Registra o nome do usuário no servidor de nomes
+        ns.register(self.username, uri)
+
+        print(f"{self.username} registered with URI: {uri}")
+
+        # Inicia o loop do daemon para escutar mensagens
+        daemon.requestLoop()
+
+    def send_message(self, recipient_username, message):
+        # Conecta ao servidor de nomes para buscar o destinatário
+        ns = Pyro4.locateNS()
+        try:
+            # Obtém a URI do destinatário
+            recipient_uri = ns.lookup(recipient_username)
+            recipient = Pyro4.Proxy(recipient_uri)
+            recipient.receive_message(self.username, message)
+            print(f"Message sent to {recipient_username}: {message}")
+        except Pyro4.errors.NamingError:
+            print(f"User {recipient_username} not found.")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("Interrupted")
-        try:
-            sys.exit(0)
-        except SystemExit:
-            os._exit(0)
+    username = input("Enter your username: ")
+    client = ChatClient(username)
+    thread = threading.Thread(target=client.register)
+    thread.start()
+    username = input("quem vc vai enviar: ")
+    msg = input("o que vc vai enviar?")
+    client.send_message(username, msg)

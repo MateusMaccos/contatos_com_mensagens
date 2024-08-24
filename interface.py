@@ -260,48 +260,48 @@ class Aplicacao:
             )
             self.switch.pack()
 
-            self.cabecalho_msgs_novas = tk.Frame()
-            self.cabecalho_msgs_novas.pack()
+            # self.cabecalho_msgs_novas = tk.Frame()
+            # self.cabecalho_msgs_novas.pack()
 
-            separator = tk.Frame(
-                self.frame_agenda_iniciada, height=2, bd=1, relief=tk.SUNKEN
-            )
-            separator.pack(fill="x", padx=5, pady=5)
+            # separator = tk.Frame(
+            #     self.frame_agenda_iniciada, height=2, bd=1, relief=tk.SUNKEN
+            # )
+            # separator.pack(fill="x", padx=5, pady=5)
 
-            self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
-            self.lbl_texto.pack(pady=5, padx=5)
+            # self.lbl_texto = tk.Label(self.cabecalho_msgs_novas, text="Mensagens novas")
+            # self.lbl_texto.pack(pady=5, padx=5)
 
-            separator = tk.Frame(
-                self.cabecalho_msgs_novas, height=2, bd=1, relief=tk.SUNKEN
-            )
-            separator.pack(fill="x", padx=5, pady=5)
+            # separator = tk.Frame(
+            #     self.cabecalho_msgs_novas, height=2, bd=1, relief=tk.SUNKEN
+            # )
+            # separator.pack(fill="x", padx=5, pady=5)
 
-            self.frame_scrolavel = tk.Frame()
-            self.frame_scrolavel.pack()
+            # self.frame_scrolavel = tk.Frame()
+            # self.frame_scrolavel.pack()
 
-            # Cria um Canvas
-            self.canvas = tk.Canvas(self.frame_scrolavel)
-            self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            # # Cria um Canvas
+            # self.canvas = tk.Canvas(self.frame_scrolavel)
+            # self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-            # Adiciona barras de rolagem
-            self.scrollbar_vertical = tk.Scrollbar(
-                self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
-            )
-            self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
+            # # Adiciona barras de rolagem
+            # self.scrollbar_vertical = tk.Scrollbar(
+            #     self.frame_scrolavel, orient=tk.VERTICAL, command=self.canvas.yview
+            # )
+            # self.scrollbar_vertical.pack(side=tk.RIGHT, fill=tk.Y)
 
-            # Configuração do Canvas
-            self.canvas.configure(
-                yscrollcommand=self.scrollbar_vertical.set,
-            )
-            self.canvas.bind("<Configure>", self.on_canvas_configure_client)
+            # # Configuração do Canvas
+            # self.canvas.configure(
+            #     yscrollcommand=self.scrollbar_vertical.set,
+            # )
+            # self.canvas.bind("<Configure>", self.on_canvas_configure_client)
 
-            # Adiciona um frame para o conteúdo
-            self.frame_mensagens_novas = tk.Frame(self.canvas)
-            self.canvas.create_window(
-                (0, 0), window=self.frame_mensagens_novas, anchor="nw"
-            )
-            self.quantidadeDeMsgsNovas = 0
-            self.atualiza_mensagens_novas()
+            # # Adiciona um frame para o conteúdo
+            # self.frame_mensagens_novas = tk.Frame(self.canvas)
+            # self.canvas.create_window(
+            #     (0, 0), window=self.frame_mensagens_novas, anchor="nw"
+            # )
+            # self.quantidadeDeMsgsNovas = 0
+            # self.atualiza_mensagens_novas()
 
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
@@ -364,6 +364,7 @@ class Aplicacao:
             self.frame_mensagens = tk.Frame(self.canvas)
             self.canvas.create_window((0, 0), window=self.frame_mensagens, anchor="nw")
 
+            self.estavaOffline = False
             self.atualiza_mensagens(contatoDestino)
 
             self.frame_input = tk.Frame(self.tela_mensagens)
@@ -421,10 +422,13 @@ class Aplicacao:
                 if len(widgets) != self.quantidadeDeMsgsReal or len(widgets) != 0:
                     for widget in self.frame_mensagens.winfo_children():
                         widget.destroy()
-                mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
-                    self.usuario.getNome()
-                )
-                self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
+
+                if self.estavaOffline:
+                    mensagensDoServidor = self.sv_mensagens.getMensagensDoUsuario(
+                        self.usuario.getNome()
+                    )
+                    self.usuario.atualizarMensagensPorLista(mensagensDoServidor)
+
                 mensagens = self.usuario.getMensagens()
                 nomeUsuarioAtual = self.usuario.getNome()
 
@@ -447,14 +451,20 @@ class Aplicacao:
                             cor="#c3c3c3",
                         )
                 self.quantidadeDeMsgsReal = len(mensagens)
+                self.estavaOffline = False
+            else:
+                self.estavaOffline = True
         except Exception as e:
             messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
+            print(e)
 
     def enviarMensagem(self, contatoDestino):
         msg = self.input_mensagem.get()
         if msg != "":
             self.input_mensagem.delete(0, tk.END)
-            self.usuario.enviarMensagem(destino=contatoDestino, texto=msg)
+            self.usuario.enviarMensagem(
+                destino=contatoDestino, texto=msg, sv_mensagens=self.sv_mensagens
+            )
             self.plotarMensagem(
                 conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
             )

@@ -63,30 +63,29 @@ class Mensagem:
 @Pyro4.expose
 @Pyro4.behavior(instance_mode="single")
 class Usuario(object):
-    def __init__(self, nome, svNomes):
+    def __init__(self, nome, svNomes, ipUsuario):
         self.nome = nome
-        self.svNomes = svNomes
+        self.ipSvNomes = svNomes
+        self.ipUsuario = ipUsuario
         self.register()
         self.contatos = []
         self.mensagens = []
         self.status = "online"
 
     def register(self):
-        ns = Pyro4.locateNS(host=self.svNomes, port=9090)
+        self.ns = Pyro4.locateNS(host=self.ipSvNomes, port=9090)
 
-        daemon = Pyro4.Daemon()
+        daemon = Pyro4.Daemon(host=self.ipUsuario)
 
         uri = daemon.register(self)
 
-        ns.register(self.nome, uri)
+        self.ns.register(self.nome, uri)
 
         threadUsuario = threading.Thread(
             target=daemon.requestLoop,
             daemon=True,
         )
         threadUsuario.start()
-
-        objetos_registrados = ns.list()
 
     def getNome(self):
         return self.nome
@@ -116,9 +115,8 @@ class Usuario(object):
     def enviarMensagem(self, destino, texto, sv_mensagens):
         msg = Mensagem(self.nome, destino, texto)
         self.mensagens.append(msg)
-        ns = Pyro4.locateNS()
         try:
-            destino_uri = ns.lookup(destino)
+            destino_uri = self.ns.lookup(destino)
             destino_instancia = Pyro4.Proxy(destino_uri)
             if destino_instancia.estaOnline():
                 destino_instancia.receberMensagem(self.nome, texto)
@@ -130,9 +128,8 @@ class Usuario(object):
             print(f"Error: {e}")
 
     def verificaSeUsuarioEstaOnline(self, usuario):
-        ns = Pyro4.locateNS()
         try:
-            usuario_uri = ns.lookup(usuario)
+            usuario_uri = self.ns.lookup(usuario)
             usuario_instancia = Pyro4.Proxy(usuario_uri)
             if usuario_instancia.estaOnline():
                 return True
@@ -140,6 +137,7 @@ class Usuario(object):
                 return False
         except Pyro4.errors.NamingError:
             print(f"Usuário {usuario} não encontrado.")
+            return False
         except Exception as e:
             print(f"Error: {e}")
 

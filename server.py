@@ -30,21 +30,18 @@ class ServidorDeMensagens(object):
         self.broker.criar_fila(user)
         self.usuarios.append(user)
 
-    def getTodosUsuarios(self):
-        nomes = []
-        for usuario in self.usuarios:
-            nomes.append(usuario.nome)
-        return nomes
+    def getUsuarios(self):
+        return self.usuarios
 
     def apagarFila(self, usuario):
         self.broker.channel.queue_delete(queue=usuario)
 
 
-def iniciar(nomeSV, ipNS, ipSV):
+def iniciar(nomeSV, ipNS, ipSV, classe):
     daemon = Pyro4.Daemon(host=ipSV)
     try:
         ns = Pyro4.locateNS(host=ipNS, port=9090)
-        uri = daemon.register(ServidorDeMensagens)
+        uri = daemon.register(classe)
         ns.register(nomeSV, uri)
         print(ipSV)
         daemon.requestLoop()

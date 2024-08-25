@@ -22,7 +22,6 @@ class BrokerMensagens:
         self.channel.basic_publish(
             exchange="", routing_key=queue_name, body=f"{origem}:{message}"
         )
-        print(f"Enviada mensagem para {queue_name}")
 
     def receber_mensagens_do_usuario(self, queue):
         mensagens = []
@@ -33,7 +32,6 @@ class BrokerMensagens:
 
             if method_frame:
                 msg = body.decode("utf-8")
-                print(f"Mensagem recebida: {msg}")
                 self.channel.basic_ack(delivery_tag=method_frame.delivery_tag)
                 mensagens.append(msg)
             else:
@@ -122,8 +120,6 @@ class Usuario(object):
                 destino_instancia.receberMensagem(self.nome, texto)
             else:
                 sv_mensagens.enviarMensagemParaOffline(self.nome, destino, texto)
-        except Pyro4.errors.NamingError:
-            print(f"Usuário {destino} não encontrado.")
         except Exception as e:
             print(f"Error: {e}")
 
@@ -136,7 +132,6 @@ class Usuario(object):
             else:
                 return False
         except Pyro4.errors.NamingError:
-            print(f"Usuário {usuario} não encontrado.")
             return False
         except Exception as e:
             print(f"Error: {e}")

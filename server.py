@@ -26,7 +26,6 @@ class ServidorDeMensagens(object):
         return mensagens
 
     def addUsuario(self, user):
-        print(user)
         self.broker.criar_fila(user)
         self.usuarios.append(user)
 
@@ -43,7 +42,6 @@ def iniciar(nomeSV, ipNS, ipSV, classe):
         ns = Pyro4.locateNS(host=ipNS, port=9090)
         uri = daemon.register(classe)
         ns.register(nomeSV, uri)
-        print(ipSV)
         daemon.requestLoop()
     except Exception as e:
         print(e)

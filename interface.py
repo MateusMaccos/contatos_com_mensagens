@@ -400,6 +400,7 @@ class Aplicacao:
             contatoDestino = self.lb_usuarios.get(selecao)
             self.tela_mensagens = tk.Tk()
             self.tela_mensagens.title(f"Mensagens de {contatoDestino}")
+            self.tela_mensagens.iconbitmap("images/icon.ico")
             self.tela_mensagens.geometry("500x500")
             self.tela_mensagens.tk.call("source", "azure.tcl")
             self.tela_mensagens.tk.call("set_theme", "dark")
@@ -451,7 +452,6 @@ class Aplicacao:
             messagebox.showwarning("Atenção", "Escolha um contato!")
         except Exception as e:
             messagebox.showwarning("Atenção", f"Não foi possível enviar mensagem! {e}")
-            print(e)
 
     def on_canvas_configure_client(self, event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -481,7 +481,7 @@ class Aplicacao:
                     contador = contador + 1
             self.quantidadeDeMsgsNovas = contador
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
+            messagebox.showerror("Erro", f"Erro ao atualizar as mensagens novas: {e}")
 
     def atualiza_mensagens(self, contatoDestino):
         try:
@@ -518,16 +518,24 @@ class Aplicacao:
                     )
             self.quantidadeDeMsgsReal = len(mensagens)
         except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao atualizar as mensagens: {e}")
-            print(e)
+            messagebox.showerror(
+                "Erro", f"Erro ao atualizar as mensagens do usuário: {e}"
+            )
 
     def enviarMensagem(self, contatoDestino):
         msg = self.input_mensagem.get()
         if msg != "":
             self.input_mensagem.delete(0, tk.END)
-            self.usuario.enviarMensagem(
-                destino=contatoDestino, texto=msg, sv_mensagens=self.sv_mensagens
-            )
+            try:
+                self.usuario.enviarMensagem(
+                    destino=contatoDestino, texto=msg, sv_mensagens=self.sv_mensagens
+                )
+            except Pyro4.errors.NamingError:
+                messagebox.showerror(
+                    "Erro", f"Usuário {contatoDestino} não encontrado."
+                )
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro inesperado ocorreu: {e}")
             self.plotarMensagem(
                 conteudo=f"EU: {msg}", frame=self.frame_mensagens, cor="#c3c3c3"
             )
@@ -619,6 +627,7 @@ class Aplicacao:
         self.tela = tk.Tk()
         self.tela.title("Menu Principal")
         self.tela.geometry("500x400")
+        self.tela.iconbitmap("images/icon.ico")
         self.tela.tk.call("source", "azure.tcl")
         self.tela.tk.call("set_theme", "dark")
         self.tela_inicial()

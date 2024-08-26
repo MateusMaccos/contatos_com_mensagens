@@ -29,6 +29,9 @@ class ServidorDeMensagens(object):
         self.broker.criar_fila(user)
         self.usuarios.append(user)
 
+    def removerUsuario(self, user):
+        self.usuarios.remove(user)
+
     def getUsuarios(self):
         return self.usuarios
 

@@ -61,6 +61,7 @@ class TelaAgenda:
         self.botao_voltar.pack(pady=5)
 
     def fechar_janela(self):
+        self.usuario.removerUsuarioDoServidor(self.sv_mensagens)
         self.usuario.apagarFila(self.sv_mensagens)
         self.tela.destroy()
 
@@ -199,17 +200,6 @@ class TelaAgenda:
 
         except Exception as e:
             messagebox.showerror("Erro", f"Não foi possível conectar ao servidor:{e}")
-
-    def removerContato(self):
-        try:
-            selecao = self.lb_usuarios.curselection()[0]
-            contatoSelecionado = self.lb_usuarios.get(selecao)
-            self.usuario.removerContato(contatoSelecionado)
-            self.lb_usuarios.delete(tk.ANCHOR)
-        except IndexError:
-            messagebox.showwarning("Atenção", "Escolha um contato!")
-        except Exception as e:
-            messagebox.showerror("Erro", f"Não foi possível apagar esse contato! {e}")
 
     def atualizarStatus(self):
         self.switch.destroy()
@@ -406,3 +396,14 @@ class TelaAgenda:
             self.lb_usuarios.insert(tk.END, contato)
         else:
             messagebox.showwarning("Atenção", "Esse contato é você!")
+
+    def removerContato(self):
+        try:
+            selecao = self.lb_usuarios.curselection()[0]
+            contatoSelecionado = self.lb_usuarios.get(selecao)
+            self.usuario.removerContato(contatoSelecionado)
+            self.lb_usuarios.delete(tk.ANCHOR)
+        except IndexError:
+            messagebox.showwarning("Atenção", "Escolha um contato!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível apagar esse contato! {e}")

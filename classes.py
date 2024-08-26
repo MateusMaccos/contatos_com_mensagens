@@ -145,6 +145,9 @@ class Usuario(object):
     def apagarFila(self, sv_mensagens):
         sv_mensagens.apagarFila(self.nome)
 
+    def removerUsuarioDoServidor(self, sv_mensagens):
+        sv_mensagens.removerUsuario(self.nome)
+
     def estaOnline(self):
         return True if self.status == "online" else False
 

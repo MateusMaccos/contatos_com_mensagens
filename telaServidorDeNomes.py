@@ -46,7 +46,7 @@ class TelaServidorDeNomes:
         self.botao_voltar.pack(pady=5)
 
     def tela_SN_iniciado(self):
-        ip_sn = self.entrada_IP_SN.get()
+        ip_sn = self.entrada_IP_SN.get().strip()
         self.tela.title("Servidor De Nomes")
         try:
             self.iniciar_servidor_nomes(ip_sn)

@@ -66,8 +66,8 @@ class TelaServidorDeMensagensOffline:
 
     def tela_SV_iniciado(self):
         self.tela.title("Servidor de mensagens offline")
-        ip_sn = self.entrada_IP_SN.get()
-        ip_sv = self.entrada_ip_sv.get()
+        ip_sn = self.entrada_IP_SN.get().strip()
+        ip_sv = self.entrada_ip_sv.get().strip()
         nome_sv = self.entrada_nome_sv.get()
         try:
             Pyro4.locateNS(host=ip_sn, port=9090)

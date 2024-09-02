@@ -70,13 +70,16 @@ class TelaAgenda:
         self.tela.destroy()
 
     def abrir_tela_mensagens(self):
-        selecao = self.lb_usuarios.curselection()[0]
-        contato = self.lb_usuarios.get(selecao)
-        telaDeMensagens = telaMensagensDiretas(
-            usuario=self.usuario, sv_mensagens=self.sv_mensagens
-        )
-        self.telas_mensagens_abertas.append(telaDeMensagens)
-        telaDeMensagens.telaMensagens(contato)
+        try:
+            selecao = self.lb_usuarios.curselection()[0]
+            contato = self.lb_usuarios.get(selecao)
+            telaDeMensagens = telaMensagensDiretas(
+                usuario=self.usuario, sv_mensagens=self.sv_mensagens, classe_agenda=self
+            )
+            self.telas_mensagens_abertas.append(telaDeMensagens)
+            telaDeMensagens.telaMensagens(contato)
+        except IndexError:
+            messagebox.showwarning("Atenção", "Selecione um contato!")
 
     def tela_agenda_iniciado(self):
         self.tela.geometry("500x700")
@@ -281,8 +284,13 @@ class TelaAgenda:
         if contato in self.usuario.contatos:
             messagebox.showwarning("Atenção", "Esse contato já existe na sua lista!")
         elif contato != self.usuario.nome:
-            self.usuario.addContato(contato)
-            self.lb_usuarios.insert(tk.END, contato)
+            try:
+                self.usuario.ns.lookup(contato)
+                self.usuario.addContato(contato)
+                self.lb_usuarios.insert(tk.END, contato)
+            except:
+                messagebox.showwarning("Atenção", "Esse usuário não existe!")
+
         else:
             messagebox.showwarning("Atenção", "Esse contato é você!")
 

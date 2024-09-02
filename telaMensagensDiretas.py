@@ -5,11 +5,14 @@ import Pyro4
 
 
 class telaMensagensDiretas:
-    def __init__(self, usuario, sv_mensagens):
+
+    def __init__(self, usuario, sv_mensagens, classe_agenda):
         self.usuario = usuario
         self.sv_mensagens = sv_mensagens
+        self.classe_agenda = classe_agenda
 
     def fechar_janela(self):
+        self.classe_agenda.telas_mensagens_abertas.remove(self)
         self.tela_mensagens.destroy()
 
     def telaMensagens(self, contatoDestino):
@@ -18,6 +21,9 @@ class telaMensagensDiretas:
             self.tela_mensagens.title(f"Mensagens de {contatoDestino}")
             self.tela_mensagens.iconbitmap("images/icon.ico")
             self.tela_mensagens.geometry("500x500")
+            self.tela_mensagens.protocol(
+                name="WM_DELETE_WINDOW", func=self.fechar_janela
+            )
             self.tela_mensagens.tk.call("source", "azure.tcl")
             self.tela_mensagens.tk.call("set_theme", "dark")
             self.quantidadeDeMsgsReal = 0

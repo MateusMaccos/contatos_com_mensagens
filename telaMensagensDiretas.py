@@ -60,6 +60,10 @@ class telaMensagensDiretas:
                 self.frame_input,
             )
             self.input_mensagem.pack(padx=10, side=tk.LEFT)
+            self.tela_mensagens.bind(
+                "<Return>",
+                func=lambda event: self.enviarMensagem(contatoDestino=contatoDestino),
+            )
 
             self.btn_addMsg = ttk.Button(
                 self.frame_input,
@@ -117,7 +121,11 @@ class telaMensagensDiretas:
                         cor="#c3c3c3",
                     )
             self.quantidadeDeMsgsReal = len(mensagens)
+        except Pyro4.errors.CommunicationError:
+            self.fechar_janela()
+            messagebox.showerror("Erro", f"{contatoDestino} desconectou da aplicação!")
         except Exception as e:
+            self.fechar_janela()
             messagebox.showerror(
                 "Erro", f"Erro ao atualizar as mensagens do usuário: {e}"
             )

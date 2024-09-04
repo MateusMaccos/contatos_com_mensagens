@@ -124,17 +124,12 @@ class Usuario(object):
             print(f"Error: {e}")
 
     def verificaSeUsuarioEstaOnline(self, usuario):
-        try:
-            usuario_uri = self.ns.lookup(usuario)
-            usuario_instancia = Pyro4.Proxy(usuario_uri)
-            if usuario_instancia.estaOnline():
-                return True
-            else:
-                return False
-        except Pyro4.errors.NamingError:
+        usuario_uri = self.ns.lookup(usuario)
+        usuario_instancia = Pyro4.Proxy(usuario_uri)
+        if usuario_instancia.estaOnline():
+            return True
+        else:
             return False
-        except Exception as e:
-            print(f"Error: {e}")
 
     def addContato(self, nome):
         self.contatos.append(nome)

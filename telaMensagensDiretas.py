@@ -62,7 +62,7 @@ class telaMensagensDiretas:
             self.input_mensagem.pack(padx=10, side=tk.LEFT)
             self.tela_mensagens.bind(
                 "<Return>",
-                func=lambda event: self.enviarMensagem(contatoDestino=contatoDestino),
+                func=lambda _: self.enviarMensagem(contatoDestino=contatoDestino),
             )
 
             self.btn_addMsg = ttk.Button(

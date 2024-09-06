@@ -16,7 +16,7 @@
 2) Cada usuário pode escolher para quem vai mandar mensagens
 3) Cada usuário tem uma lista de mensagens novas que aparecem todas as mensagens de todos os usuários
 4) Cada usuário tem um chat reservado que recebe e envia mensagens particulares para cada contato
-5) Os usuários se comunicam por RMI quando estão online
+5) Os usuários se comunicam pelo Pyro quando estão online
 
 É possível observar quais usuários foram cadastrados pela interface do Servidor de Mensagens:
 1) Cada usuário novo que se cadastra é criada uma fila dele no Broker
